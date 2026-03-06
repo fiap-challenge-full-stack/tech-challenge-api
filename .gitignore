@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.log
+.vscode/
+.DS_Store
+
+# Agent Skills (Local Only)
+.github/copilot-instructions.md
+.hooks/
