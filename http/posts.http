@@ -32,11 +32,21 @@ PUT {{baseUrl}}/posts/{{postId}}
 Content-Type: application/json
 
 {
-  "title": "Minha primeira aula (Editada)",
-  "content": "Conteúdo atualizado sobre frações e decimais.",
-  "author": "Prof. Vinicius"
+  "title": "Minha aula atualizada",
+  "content": "Conteúdo modificado com novas explicações.",
+  "author": "Prof. Atualizado"
 }
 
 ### Delete Post
 DELETE {{baseUrl}}/posts/{{postId}}
 Content-Type: application/json
+
+### Erro de Validação (Título curto)
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+  "title": "Oi",
+  "content": "Conteúdo curto",
+  "author": "Eu"
+}

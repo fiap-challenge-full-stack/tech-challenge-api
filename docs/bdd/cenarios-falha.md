@@ -23,6 +23,21 @@ Este documento descreve como a API deve reagir a entradas inválidas ou situaç�
 
 ---
 
+## Funcionalidade: Atualização e Exclusão (Sprint 5)
+### Cenário: Tentar atualizar post inexistente
+*   **Dado** que o ID `non-existent-789` não consta na base
+*   **Quando** eu envio uma requisição `PUT` para `/posts/non-existent-789`
+*   **Então** o sistema deve retornar o status HTTP `404 Not Found`
+*   **E** a mensagem `{"message": "Post not found"}`.
+
+### Cenário: Tentar deletar post inexistente
+*   **Dado** que o ID `non-existent-999` não consta na base
+*   **Quando** eu envio uma requisição `DELETE` para `/posts/non-existent-999`
+*   **Então** o sistema deve retornar o status HTTP `404 Not Found`
+*   **E** a mensagem `{"message": "Post not found"}`.
+
+---
+
 ## Funcionalidade: Busca de Postagens (Sprint 7/Busca)
 ### Cenário: Busca sem resultados
 *   **Dado** que não existe nenhum post contendo o termo "XPTO"

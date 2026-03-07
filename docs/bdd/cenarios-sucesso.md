@@ -44,6 +44,34 @@ Este documento descreve os comportamentos esperados para as funcionalidades da A
 
 ---
 
+## Funcionalidade: Atualização de Postagem (Sprint 5)
+**Como um** Autor  
+**Eu quero** editar um post já existente  
+**Para que** eu possa corrigir erros ou atualizar informações
+
+### Cenário: Atualizar título e conteúdo de um post
+*   **Dado** que existe um post com o ID `abc-123`
+*   **E** eu possuo novos dados para o título e conteúdo
+*   **Quando** eu envio uma requisição `PUT` para `/posts/abc-123` com os novos dados
+*   **Então** o sistema deve atualizar as informações no banco de dados
+*   **E** retornar o status HTTP `200 OK`
+*   **E** o corpo da resposta deve conter o post atualizado.
+
+---
+
+## Funcionalidade: Exclusão de Postagem (Sprint 5)
+**Como um** Autor/Moderador  
+**Eu quero** remover uma postagem do blog  
+**Para que** conteúdos irrelevantes sejam retirados
+
+### Cenário: Excluir um post por ID
+*   **Dado** que existe um post com o ID `delete-me-789`
+*   **Quando** eu envio uma requisição `DELETE` para `/posts/delete-me-789`
+*   **Então** o sistema deve remover o post permanentemente do banco de dados
+*   **E** retornar o status HTTP `204 No Content`.
+
+---
+
 ## Funcionalidade: Monitoramento (Sprint 1)
 ### Cenário: Verificar saúde da aplicação
 *   **Dado** que a API está no ar
