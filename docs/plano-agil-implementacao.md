@@ -21,8 +21,8 @@ Esta fase implementa as regras de negócio para a criação do blog dinâmico.
 | Sprint | Status | Descrição | Tarefas Realizadas |
 | :--- | :---: | :--- | :--- |
 | **Sprint 4: Criação e Leitura** | ✅ | Endpoints base de posts | \`POST /posts\`, \`GET /posts\`, \`GET /posts/:id\` |
-| **Sprint 5: Atualização e Exclusão** | ⏳ | Manutenção de conteúdo | \`PUT /posts/:id\`, \`DELETE /posts/:id\`, Tratamento 404 |
-| **Sprint 6: Validações** | ⏳ | Consistência e Middlewares | Bloqueio de campos nulos, Respostas \`400 Bad Request\` |
+| **Sprint 5: Atualização e Exclusão** | ✅ | Manutenção de conteúdo | \`PUT /posts/:id\`, \`DELETE /posts/:id\`, Tratamento 404 |
+| **Sprint 6: Validações** | ✅ | Consistência e Middlewares | Zod Validation, Bloqueio de campos nulos, Respostas \`400 Bad Request\` |
 
 ---
 
@@ -52,7 +52,7 @@ Fase em que a aplicação se torna madura e entregável.
 
 - [x] Node.js + Express instalados e rodando.
 - [x] Banco de Dados (SQL/NoSQL) implementado.
-- [ ] CRUD Completo de Postagens implementado (\`GET\`, \`POST\`, \`PUT\`, \`DELETE\`).
+- [x] CRUD Completo de Postagens implementado (\`GET\`, \`POST\`, \`PUT\`, \`DELETE\`).
 - [x] Endpoint de Busca (\`GET /posts/search\`) implementado e funcional.
 - [x] Dockerfiles e \`docker-compose\` criados e testados.
 - [ ] Pipeline CI/CD rodando no GitHub Actions com sucesso automátizado para testes.
