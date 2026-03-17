@@ -1,10 +1,29 @@
 import { Request, Response } from 'express';
-import { PostService } from './postService';
+import { PostService, PostNotFoundError } from './postService';
 import { createPostSchema, updatePostSchema } from './postSchemas';
 import { ZodError } from 'zod';
 
 export class PostController {
   constructor(private readonly postService: PostService) {}
+
+  private handleError(error: unknown, res: Response): Response {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ 
+        message: 'Falha na validação dos campos', 
+        errors: error.issues.map((err) => ({ 
+          field: err.path.join('.'), 
+          message: err.message 
+        }))
+      });
+    }
+
+    if (error instanceof PostNotFoundError) {
+      return res.status(404).json({ message: error.message });
+    }
+
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return res.status(400).json({ message });
+  }
 
   async create(req: Request, res: Response): Promise<Response> {
     try {
@@ -12,30 +31,24 @@ export class PostController {
       const post = await this.postService.create(validatedData);
       return res.status(201).json(post);
     } catch (error) {
-      if (error instanceof ZodError) {
-        const zodError = error as ZodError;
-        return res.status(400).json({ 
-          message: 'Falha na validação dos campos', 
-          errors: zodError.issues.map((err) => ({ field: err.path.join('.'), message: err.message }))
-        });
-      }
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      return res.status(400).json({ message });
+      return this.handleError(error, res);
     }
   }
 
-  async list(req: Request, res: Response): Promise<Response> {
+  async list(_req: Request, res: Response): Promise<Response> {
     const posts = await this.postService.listAll();
     return res.status(200).json(posts);
   }
 
   async getById(req: Request, res: Response): Promise<Response> {
-    const { id } = req.params;
-    const post = await this.postService.findById(id as string);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+    try {
+      const { id } = req.params;
+      const post = await this.postService.findById(id as string);
+      if (!post) throw new PostNotFoundError();
+      return res.status(200).json(post);
+    } catch (error) {
+      return this.handleError(error, res);
     }
-    return res.status(200).json(post);
   }
 
   async search(req: Request, res: Response): Promise<Response> {
@@ -45,34 +58,23 @@ export class PostController {
   }
 
   async update(req: Request, res: Response): Promise<Response> {
-    const { id } = req.params;
     try {
+      const { id } = req.params;
       const validatedData = updatePostSchema.parse(req.body);
       const post = await this.postService.update(id as string, validatedData);
       return res.status(200).json(post);
     } catch (error) {
-      if (error instanceof ZodError) {
-        const zodError = error as ZodError;
-        return res.status(400).json({ 
-          message: 'Falha na validação dos campos', 
-          errors: zodError.issues.map((err) => ({ field: err.path.join('.'), message: err.message }))
-        });
-      }
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      const status = message === 'Post not found' ? 404 : 400;
-      return res.status(status).json({ message });
+      return this.handleError(error, res);
     }
   }
 
   async delete(req: Request, res: Response): Promise<Response> {
-    const { id } = req.params;
     try {
+      const { id } = req.params;
       await this.postService.delete(id as string);
       return res.status(204).send();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      const status = message === 'Post not found' ? 404 : 400;
-      return res.status(status).json({ message });
+      return this.handleError(error, res);
     }
   }
 }
