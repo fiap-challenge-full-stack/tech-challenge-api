@@ -27,8 +27,8 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 
-# Expor a porta definida no .env ou padrão 3000
-EXPOSE 3000
+# Expor a porta 3001
+EXPOSE 3001
 
-# Removido CMD para permitir inicialização via terminal ou docker-compose override
+CMD ["npm", "start"]
 

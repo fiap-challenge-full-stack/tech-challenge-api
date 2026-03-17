@@ -30,7 +30,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - PORT=${PORT}
     ports:
-      - "3000:3000"
+      - "3001:3001"
 
 volumes:
   postgres_data:
