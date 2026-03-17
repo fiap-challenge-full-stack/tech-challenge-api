@@ -1,29 +1,38 @@
 import request from 'supertest';
 import app from '../../src/app';
-import { prisma } from '../../src/lib/prisma';
+import { db } from '../../src/lib/db';
 
 describe('Posts API - Failure Scenarios (Edge Cases)', () => {
   afterAll(async () => {
-    await prisma.$disconnect();
+    await db.end();
   });
 
   describe('Retrieval Failures', () => {
     it('should return 404 when post does not exist', async () => {
-      const response = await request(app).get('/posts/non-existent-uuid');
+      const response = await request(app).get('/posts/00000000-0000-0000-0000-000000000000');
       
       expect(response.status).toBe(404);
       expect(response.body).toEqual({ message: 'Post not found' });
     });
   });
 
-  describe('Search Failures', () => {
-    it('should return empty list when no matches found', async () => {
-      const response = await request(app).get('/posts/search?q=TERM_THAT_DOES_NOT_EXIST_123');
+  describe('Validation Failures (Zod)', () => {
+    it('should return 400 when title is too short', async () => {
+      const response = await request(app)
+        .post('/posts')
+        .send({ title: 'Ab', content: 'Content content content', author: 'Author' });
       
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual([]);
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('errors');
+    });
+
+    it('should return 400 when content is too short', async () => {
+      const response = await request(app)
+        .post('/posts')
+        .send({ title: 'Valid Title', content: 'Short', author: 'Author' });
+      
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('errors');
     });
   });
-
-  // Nota: Testes de validação de campos (400 Bad Request) serão adicionados na Sprint 6
 });

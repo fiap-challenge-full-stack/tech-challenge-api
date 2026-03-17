@@ -1,26 +1,28 @@
 import request from 'supertest';
 import app from '../../src/app';
-import { prisma } from '../../src/lib/prisma';
+import { db } from '../../src/lib/db';
 
 describe('Posts API - Success Scenarios (Happy Path)', () => {
   afterAll(async () => {
-    await prisma.$disconnect();
+    await db.end();
   });
 
   describe('Post Creation and Retrieval', () => {
     it('should create a new post successfully', async () => {
       const payload = {
-        title: 'BDD Success Post',
-        content: 'Content for success',
-        author: 'Success Author'
+        title: 'New Success Post',
+        content: 'Content content content with enough length',
+        author: 'Author'
       };
 
-      const response = await request(app).post('/posts').send(payload);
+      const response = await request(app)
+        .post('/posts')
+        .send(payload);
 
       expect(response.status).toBe(201);
       expect(response.body.title).toBe(payload.title);
 
-      await prisma.post.delete({ where: { id: response.body.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [response.body.uuid]);
     });
 
     it('should list all posts', async () => {
@@ -30,31 +32,29 @@ describe('Posts API - Success Scenarios (Happy Path)', () => {
     });
 
     it('should return a post by id', async () => {
-      const post = await prisma.post.create({
-        data: { title: 'Id Test', content: 'Content', author: 'Author' }
-      });
+      const res = await db.query('INSERT INTO "posts" (title, content, author) VALUES ($1, $2, $3) RETURNING *', ['Id Test', 'Content content content', 'Author']);
+      const post = res.rows[0];
 
-      const response = await request(app).get(`/posts/${post.id}`);
+      const response = await request(app).get(`/posts/${post.uuid}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.id).toBe(post.id);
+      expect(response.body.uuid).toBe(post.uuid);
 
-      await prisma.post.delete({ where: { id: post.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [post.uuid]);
     });
   });
 
   describe('Search Functionality', () => {
     it('should find posts by keyword', async () => {
-      const post = await prisma.post.create({
-        data: { title: 'Searchable success', content: 'UniqueContent', author: 'Author' }
-      });
+      const res = await db.query('INSERT INTO "posts" (title, content, author) VALUES ($1, $2, $3) RETURNING *', ['Searchable success', 'UniqueContent', 'Author']);
+      const post = res.rows[0];
 
       const response = await request(app).get('/posts/search?q=UniqueContent');
       
       expect(response.status).toBe(200);
-      expect(response.body.some((p: any) => p.id === post.id)).toBe(true);
+      expect(response.body.some((p: any) => p.uuid === post.uuid)).toBe(true);
 
-      await prisma.post.delete({ where: { id: post.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [post.uuid]);
     });
   });
 });

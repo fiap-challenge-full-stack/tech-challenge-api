@@ -1,35 +1,31 @@
-import { PrismaPostRepository } from '@/posts/prismaPostRepository';
 import { NativeSqlPostRepository } from '@/posts/nativeSqlPostRepository';
 import { Post } from '@/posts/post';
-import { prisma } from '@/lib/prisma';
 import { db } from '@/lib/db';
 
-describe('Repository Comparison (Prisma vs Native SQL)', () => {
-  let prismaRepo: PrismaPostRepository;
+describe('Repository Baseline Comparison (Native SQL vs Direct Queries)', () => {
   let nativeSqlRepo: NativeSqlPostRepository;
   const testPostsUuids: string[] = [];
 
   beforeAll(() => {
-    prismaRepo = new PrismaPostRepository();
     nativeSqlRepo = new NativeSqlPostRepository();
   });
 
   afterEach(async () => {
     // Cleanup any posts created during tests
-    for (const uuid of testPostsUuids) {
-      await prisma.post.deleteMany({ where: { uuid } });
+    if (testPostsUuids.length > 0) {
+      await db.query('DELETE FROM "posts" WHERE uuid = ANY($1)', [testPostsUuids]);
     }
     testPostsUuids.length = 0;
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
     await db.end();
   });
 
   async function createTestPost(title: string, content: string, author: string): Promise<Post> {
-    const post = Post.create(title, content, author);
-    const created = await prismaRepo.create(post);
+    const res = await db.query('INSERT INTO "posts" (title, content, author) VALUES ($1, $2, $3) RETURNING *', [title, content, author]);
+    const row = res.rows[0];
+    const created = new Post(row.id, row.uuid, row.title, row.content, row.author, new Date(row.createdAt), new Date(row.updatedAt));
     if (created.uuid) testPostsUuids.push(created.uuid);
     return created;
   }
@@ -38,22 +34,19 @@ describe('Repository Comparison (Prisma vs Native SQL)', () => {
     await createTestPost('Repo Compare 1', 'Content 1', 'Author 1');
     await createTestPost('Repo Compare 2', 'Content 2', 'Author 2');
 
-    const prismaResults = await prismaRepo.findAll();
     const nativeResults = await nativeSqlRepo.findAll();
 
-    // Sort to ensure comparison works regardless of order
-    const sortFn = (a: Post, b: Post) => (a.uuid || '').localeCompare(b.uuid || '');
-    prismaResults.sort(sortFn);
-    nativeResults.sort(sortFn);
+    // Baseline: Direct SQL check
+    const { rows } = await db.query('SELECT * FROM "posts" ORDER BY "createdAt" DESC');
+    
+    expect(nativeResults.length).toBeGreaterThanOrEqual(2);
+    expect(nativeResults.length).toBe(rows.length);
 
-    expect(prismaResults.length).toBeGreaterThanOrEqual(2);
-    expect(nativeResults.length).toBe(prismaResults.length);
-
-    for (let i = 0; i < prismaResults.length; i++) {
-      expect(nativeResults[i].uuid).toBe(prismaResults[i].uuid);
-      expect(nativeResults[i].title).toBe(prismaResults[i].title);
-      expect(nativeResults[i].content).toBe(prismaResults[i].content);
-      expect(nativeResults[i].author).toBe(prismaResults[i].author);
+    for (let i = 0; i < rows.length; i++) {
+      expect(nativeResults[i].uuid).toBe(rows[i].uuid);
+      expect(nativeResults[i].title).toBe(rows[i].title);
+      expect(nativeResults[i].content).toBe(rows[i].content);
+      expect(nativeResults[i].author).toBe(rows[i].author);
     }
   });
 
@@ -61,13 +54,16 @@ describe('Repository Comparison (Prisma vs Native SQL)', () => {
     const created = await createTestPost('Single Post', 'Content', 'Author');
     const uuid = created.uuid!;
 
-    const prismaResult = await prismaRepo.findById(uuid);
     const nativeResult = await nativeSqlRepo.findById(uuid);
+    
+    // Baseline: Direct SQL check
+    const { rows } = await db.query('SELECT * FROM "posts" WHERE uuid = $1', [uuid]);
+    const baseline = rows[0];
 
-    expect(prismaResult).not.toBeNull();
     expect(nativeResult).not.toBeNull();
-    expect(nativeResult?.uuid).toBe(prismaResult?.uuid);
-    expect(nativeResult?.title).toBe(prismaResult?.title);
+    expect(baseline).not.toBeUndefined();
+    expect(nativeResult?.uuid).toBe(baseline?.uuid);
+    expect(nativeResult?.title).toBe(baseline?.title);
   });
 
   it('should return identical results for search', async () => {
@@ -75,15 +71,21 @@ describe('Repository Comparison (Prisma vs Native SQL)', () => {
     await createTestPost(`Title ${uniqueTerm}`, 'Content', 'Author');
     await createTestPost('Other Title', `Content ${uniqueTerm}`, 'Author');
 
-    const prismaResults = await prismaRepo.search(uniqueTerm);
     const nativeResults = await nativeSqlRepo.search(uniqueTerm);
+    
+    // Baseline: Direct SQL check
+    const { rows } = await db.query(`
+      SELECT * FROM "posts"
+      WHERE title ILIKE $1 OR content ILIKE $1
+      ORDER BY "createdAt" DESC;
+    `, [`%${uniqueTerm}%`]);
 
-    expect(prismaResults.length).toBe(2);
     expect(nativeResults.length).toBe(2);
+    expect(rows.length).toBe(2);
     
-    const prismaUuids = prismaResults.map(p => p.uuid).sort();
     const nativeUuids = nativeResults.map(p => p.uuid).sort();
+    const baselineUuids = rows.map(r => r.uuid).sort();
     
-    expect(nativeUuids).toEqual(prismaUuids);
+    expect(nativeUuids).toEqual(baselineUuids);
   });
 });

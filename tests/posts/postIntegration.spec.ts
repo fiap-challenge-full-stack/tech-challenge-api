@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../src/app';
-import { prisma } from '../../src/lib/prisma';
+import { db } from '../../src/lib/db';
 
 describe('Posts API (Integration with Rollback)', () => {
   /**
@@ -14,7 +14,7 @@ describe('Posts API (Integration with Rollback)', () => {
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
+    await db.end();
   });
 
   describe('POST /posts', () => {
@@ -36,24 +36,19 @@ describe('Posts API (Integration with Rollback)', () => {
         .send(payload);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('uuid');
       expect(response.body.title).toBe(payload.title);
 
       // Limpeza (Simulando o "rollback" de dados reais no banco de teste)
-      await prisma.post.delete({ where: { id: response.body.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [response.body.uuid]);
     });
   });
 
   describe('GET /posts', () => {
     it('should list all posts', async () => {
       // Arrange: Criar um post temporário
-      const post = await prisma.post.create({
-        data: {
-          title: 'Temporary Post for List',
-          content: 'Content',
-          author: 'Author'
-        }
-      });
+      const res = await db.query('INSERT INTO "posts" (title, content, author) VALUES ($1, $2, $3) RETURNING *', ['Temporary Post for List', 'Content', 'Author']);
+      const post = res.rows[0];
 
       // Act
       const response = await request(app).get('/posts');
@@ -61,35 +56,30 @@ describe('Posts API (Integration with Rollback)', () => {
       // Assert
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.some((p: any) => p.id === post.id)).toBe(true);
+      expect(response.body.some((p: any) => p.uuid === post.uuid)).toBe(true);
 
       // Cleanup
-      await prisma.post.delete({ where: { id: post.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [post.uuid]);
     });
   });
 
   describe('GET /posts/:id', () => {
     it('should return 404 for non-existent post', async () => {
-      const response = await request(app).get('/posts/non-existent-id');
+      const response = await request(app).get('/posts/00000000-0000-0000-0000-000000000000');
       expect(response.status).toBe(404);
       expect(response.body).toEqual({ message: 'Post not found' });
     });
 
     it('should return a post by id', async () => {
-      const post = await prisma.post.create({
-        data: {
-          title: 'Detail Test',
-          content: 'Content',
-          author: 'Author'
-        }
-      });
+      const res = await db.query('INSERT INTO "posts" (title, content, author) VALUES ($1, $2, $3) RETURNING *', ['Detail Test', 'Content', 'Author']);
+      const post = res.rows[0];
 
-      const response = await request(app).get(`/posts/${post.id}`);
+      const response = await request(app).get(`/posts/${post.uuid}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.id).toBe(post.id);
+      expect(response.body.uuid).toBe(post.uuid);
 
-      await prisma.post.delete({ where: { id: post.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [post.uuid]);
     });
   });
 
@@ -102,20 +92,15 @@ describe('Posts API (Integration with Rollback)', () => {
     });
 
     it('should find posts by title or content', async () => {
-      const post = await prisma.post.create({
-        data: {
-          title: 'Searchable Title',
-          content: 'Specific content keyword',
-          author: 'Search Author'
-        }
-      });
+      const res = await db.query('INSERT INTO "posts" (title, content, author) VALUES ($1, $2, $3) RETURNING *', ['Searchable Title', 'Specific content keyword', 'Search Author']);
+      const post = res.rows[0];
 
       const response = await request(app).get('/posts/search?q=Searchable');
       
       expect(response.status).toBe(200);
-      expect(response.body.some((p: any) => p.id === post.id)).toBe(true);
+      expect(response.body.some((p: any) => p.uuid === post.uuid)).toBe(true);
 
-      await prisma.post.delete({ where: { id: post.id } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [post.uuid]);
     });
   });
 
@@ -124,21 +109,21 @@ describe('Posts API (Integration with Rollback)', () => {
       // 1. Create
       const createRes = await request(app)
         .post('/posts')
-        .send({ title: 'Flow Test', content: 'Flow', author: 'Tester' });
+        .send({ title: 'Flow Test', content: 'Flow Flow Flow', author: 'Tester' });
       
-      const postId = createRes.body.id;
+      const postUuid = createRes.body.uuid;
       expect(createRes.status).toBe(201);
 
       // 2. Retrieve
-      const getRes = await request(app).get(`/posts/${postId}`);
+      const getRes = await request(app).get(`/posts/${postUuid}`);
       expect(getRes.status).toBe(200);
       expect(getRes.body.title).toBe('Flow Test');
 
       // 3. Rollback (Delete)
-      await prisma.post.delete({ where: { id: postId } });
+      await db.query('DELETE FROM "posts" WHERE uuid = $1', [postUuid]);
 
       // 4. Verify deletion
-      const finalRes = await request(app).get(`/posts/${postId}`);
+      const finalRes = await request(app).get(`/posts/${postUuid}`);
       expect(finalRes.status).toBe(404);
     });
   });
