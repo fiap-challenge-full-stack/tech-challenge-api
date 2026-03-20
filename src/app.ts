@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -18,8 +18,9 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/posts', postRouter);
 
 // Tratador de erro global (deve ser o último middleware)
-app.use((err: any, req: Request, res: Response, next: any) => {
-  if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error & { status?: number; body?: unknown }, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && err.status === 400 && err.body) {
     return res.status(400).json({ message: 'JSON malformado ou inválido' });
   }
   
