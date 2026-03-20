@@ -1,6 +1,7 @@
 -- CreateTable
 CREATE TABLE "posts" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "uuid" UUID NOT NULL DEFAULT gen_random_uuid(),
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "author" TEXT NOT NULL,
@@ -9,3 +10,6 @@ CREATE TABLE "posts" (
 
     CONSTRAINT "posts_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "posts_uuid_key" ON "posts"("uuid");
