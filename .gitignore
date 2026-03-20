@@ -11,3 +11,6 @@ dist/
 
 /src/generated/prisma
 coverage
+
+AGENTS.md
+.agents

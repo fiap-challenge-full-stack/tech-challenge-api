@@ -12,7 +12,7 @@ export class PrismaPostRepository implements IPostRepository {
         author: post.author,
       },
     });
-    return PostMapper.toDomain(created as any);
+    return PostMapper.toDomain(created as IPostPersistence);
   }
 
   async findById(uuid: string): Promise<Post | null> {
@@ -20,14 +20,14 @@ export class PrismaPostRepository implements IPostRepository {
       where: { uuid },
     });
     if (!found) return null;
-    return PostMapper.toDomain(found as any);
+    return PostMapper.toDomain(found as IPostPersistence);
   }
 
   async findAll(): Promise<Post[]> {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    return posts.map((p: any) => PostMapper.toDomain(p));
+    return posts.map((p: IPostPersistence) => PostMapper.toDomain(p));
   }
 
   async update(post: Post): Promise<Post> {
@@ -40,7 +40,7 @@ export class PrismaPostRepository implements IPostRepository {
         author: post.author,
       },
     });
-    return PostMapper.toDomain(updated as any);
+    return PostMapper.toDomain(updated as IPostPersistence);
   }
 
   async delete(uuid: string): Promise<void> {
@@ -58,6 +58,6 @@ export class PrismaPostRepository implements IPostRepository {
         ],
       },
     });
-    return posts.map((p: any) => PostMapper.toDomain(p));
+    return posts.map((p: IPostPersistence) => PostMapper.toDomain(p));
   }
 }

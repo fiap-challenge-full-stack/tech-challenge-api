@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -8,15 +8,16 @@ on:
 
 jobs:
   build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
         ports:
           - 5432:5432
         options: >-
@@ -27,13 +28,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Validate Secrets
-        run: |
-          if [ -z "${{ secrets.DATABASE_URL }}" ]; then echo "DATABASE_URL is missing"; exit 1; fi
-          if [ -z "${{ secrets.POSTGRES_USER }}" ]; then echo "POSTGRES_USER is missing"; exit 1; fi
-          if [ -z "${{ secrets.POSTGRES_PASSWORD }}" ]; then echo "POSTGRES_PASSWORD is missing"; exit 1; fi
-          if [ -z "${{ secrets.POSTGRES_DB }}" ]; then echo "POSTGRES_DB is missing"; exit 1; fi
 
       - name: Use Node.js 20
         uses: actions/setup-node@v4
@@ -56,10 +50,47 @@ jobs:
       - name: Run Database Migrations (Test Env)
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
 
       - name: Run Integration Tests
         run: npm test
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
           NODE_ENV: test
+
+  deploy:
+    name: Deploy to GHCR
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            type=sha,format=short
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
