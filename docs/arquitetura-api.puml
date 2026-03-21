@@ -1,0 +1,67 @@
+@startuml "Arquitetura da API - DDD & Padrões"
+
+' Configurações Visuais
+!theme plain
+skinparam componentStyle uml2
+skinparam package {
+    BackgroundColor White
+    BorderColor #2C3E50
+}
+
+' Definição de Cores por Camada
+!define INFRA_COLOR #FADBD8
+!define DOMAIN_COLOR #D1F2EB
+!define APP_COLOR #D6EAF8
+!define API_COLOR #FCF3CF
+
+package "Camada de Interface (API)" <<Rectangle>> #FCF3CF {
+    [Express App] as App
+    [Routes] as RT
+    [Controllers] as CT
+    [DTOs / Validação (Zod)] as DTO
+}
+
+package "Camada de Aplicação" <<Rectangle>> #D6EAF8 {
+    [PostService] as SVC
+}
+
+package "Camada de Domínio" <<Rectangle>> #D1F2EB {
+    [Post Entity] as ENT
+    [IPostRepository (Interface)] as RepoInt
+}
+
+package "Camada de Infraestrutura" <<Rectangle>> #FADBD8 {
+    component "Repositórios" {
+        [NativeSqlPostRepository\n(SQL Nativo / pg)] as SQLRepo
+        [PrismaPostRepository\n(ORM/Alternativo)] as PrismaRepo
+    }
+    
+    database "PostgreSQL" as DB
+    [Prisma Migrations] as Mig
+}
+
+' Fluxo de Execução
+App --> RT
+RT --> CT
+CT ..> DTO : Valida
+CT --> SVC
+SVC --> RepoInt
+RepoInt <|-- SQLRepo : Implementa
+RepoInt <|-- PrismaRepo : Implementa (OPC)
+
+' Persistência
+SQLRepo --> DB : "Pure SQL"
+PrismaRepo --> DB : "Prisma Client"
+Mig ..> DB : "Define Schema"
+
+note top of App
+  **Linguagem:** TypeScript
+  **Tipagem:** Estática (Strict Mode)
+end note
+
+note right of SQLRepo
+  Controle total de performance
+  e queries otimizadas.
+end note
+
+@enduml

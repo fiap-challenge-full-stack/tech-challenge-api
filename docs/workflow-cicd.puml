@@ -1,0 +1,44 @@
+@startuml "Workflow CI/CD - Automação"
+
+' Configurações Gerais
+!theme plain
+skinparam activity {
+    BackgroundColor White
+    BorderColor #2C3E50
+    ArrowColor #2C3E50
+}
+
+partition "GitHub Actions (CI/CD Pipeline)" {
+    
+    (*) --> "Git Push / PR (main/develop)"
+    
+    "Git Push / PR (main/develop)" --> "Job: Build and Test"
+    
+    partition "Job: Build and Test" #D6EAF8 {
+        --> "Checkout Repositório"
+        --> "Configurar Node.js (v20)"
+        --> "Instalar Dependências (npm ci)"
+        --> "Executar Lint (ESLint)"
+        --> "Executar Build (TSC)"
+        --> "Aplicar Migrations (Prisma Migrate)"
+        --> "Executar Testes (Jest)"
+        note right: Testes Unitários e de Integração\ncom Banco de Dados Real
+    }
+    
+    if "Sucesso nos Testes?" then
+        --> [Sim] "Job: Deploy"
+    else
+        --> [Não] "Falha no Pipeline / Notificar"
+        -right-> (*)
+    endif
+    
+    partition "Job: Deploy" #D1F2EB {
+        --> "Autenticar no GHCR.io"
+        --> "Build Docker Image"
+        --> "Push Image to GitHub Registry"
+    }
+    
+    "Push Image to GitHub Registry" --> (*)
+}
+
+@enduml

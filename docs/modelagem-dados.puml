@@ -1,0 +1,40 @@
+@startuml "Diagrama de Modelagem de Banco de Dados"
+
+' Configurações Gerais
+!theme plain
+skinparam roundcorner 15
+skinparam shadowing false
+skinparam class {
+    BackgroundColor White
+    ArrowColor #2C3E50
+    BorderColor #2C3E50
+}
+
+' Legenda de Cores por Domínio
+legend top right
+  | Cor | Domínio |
+  |<#D6EAF8>| Conteúdo / Blog |
+  |<#FADBD8>| Identidade (Sugestão de Expansão) |
+endlegend
+
+package "Domínio: Conteúdo (Content)" <<Rectangle>> {
+    
+    entity "posts" as Post << (T, #D6EAF8) >> {
+        * id : Int <<PK, autoincrement>>
+        --
+        * uuid : UUID <<Unique, default: gen_random_uuid()>>
+        * title : String
+        * content : String
+        * author : String
+        * createdAt : DateTime <<default: now()>>
+        * updatedAt : DateTime
+    }
+
+}
+
+note right of Post
+  Entidade central para armazenamento de publicações.
+  Utiliza UUID para exposição pública e ID interno para performance.
+end note
+
+@enduml

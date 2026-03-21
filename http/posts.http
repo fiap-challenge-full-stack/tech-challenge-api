@@ -25,7 +25,7 @@ GET {{baseUrl}}/posts/{{postUuid}}
 Content-Type: application/json
 
 ### Search Posts
-GET {{baseUrl}}/posts/search?q=Matematica
+GET {{baseUrl}}/posts/search?q=UniqueTerm_1773711629549
 Content-Type: application/json
 
 ### Update Post
