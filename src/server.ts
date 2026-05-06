@@ -1,3 +1,4 @@
+import './observability/otel-config';
 import app from './app';
 import dotenv from 'dotenv';
 
