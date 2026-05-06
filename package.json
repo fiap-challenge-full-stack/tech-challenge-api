@@ -12,7 +12,11 @@
     "lint": "eslint 'src/**/*.{ts,js}' --fix",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,10 +25,12 @@
   "dependencies": {
     "@prisma/client": "5.11.0",
     "@types/uuid": "^10.0.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "pg": "^8.20.0",
     "uuid": "^13.0.0",
@@ -32,9 +38,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.3.5",
     "@types/pg": "^8.18.0",

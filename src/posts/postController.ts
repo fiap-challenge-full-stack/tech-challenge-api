@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { PostService, PostNotFoundError } from './postService';
 import { createPostSchema, updatePostSchema } from './postSchemas';
 import { ZodError } from 'zod';
+import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
+import { logError } from '../shared/logger';
 
 export class PostController {
   constructor(private readonly postService: PostService) {}
@@ -9,6 +11,7 @@ export class PostController {
   private handleError(error: unknown, res: Response): Response {
     if (error instanceof ZodError) {
       return res.status(400).json({ 
+        codigo: CodigoErro.VALIDACAO_CAMPO_INVALIDO,
         message: 'Falha na validação dos campos', 
         errors: error.issues.map((err) => ({ 
           field: err.path.join('.'), 
@@ -18,11 +21,26 @@ export class PostController {
     }
 
     if (error instanceof PostNotFoundError) {
-      return res.status(404).json({ message: error.message });
+      return res.status(404).json({ 
+        codigo: CodigoErro.POST_NAO_ENCONTRADO,
+        message: 'Post não encontrado' 
+      });
     }
 
-    const message = error instanceof Error ? error.message : 'Erro interno do servidor';
-    return res.status(500).json({ message });
+    if (error instanceof ErroAplicacao) {
+      logError(error, 'PostController');
+      return res.status(error.codigo === CodigoErro.POST_NAO_ENCONTRADO ? 404 : 500).json({ 
+        codigo: error.codigo,
+        message: error.message 
+      });
+    }
+
+    logError(error instanceof Error ? error : new Error(String(error)), 'PostController');
+    const erroApp = criarErro(CodigoErro.SERVIDOR_INTERNO);
+    return res.status(500).json({ 
+      codigo: erroApp.codigo,
+      message: erroApp.message 
+    });
   }
 
   async create(req: Request, res: Response): Promise<Response> {

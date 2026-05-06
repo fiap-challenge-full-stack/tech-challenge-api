@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { postRouter } from './posts/postRoutes';
+import { authRouter } from './auth/authRoutes';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/auth', authRouter);
 app.use('/posts', postRouter);
 
 // Tratador de erro global (deve ser o último middleware)

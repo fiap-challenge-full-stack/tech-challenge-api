@@ -1,0 +1,532 @@
+openapi: 3.0.3
+info:
+  title: Blog Educacional API
+  description: API REST para plataforma de blog educacional da FIAP
+  version: 1.0.0
+  contact:
+    name: Vinicius Franco Silva
+    email: aluno@fiap.com.br
+
+servers:
+  - url: http://localhost:3001
+    description: Servidor de desenvolvimento local
+  - url: http://localhost:3000
+    description: Servidor de produção (Docker)
+
+tags:
+  - name: Health
+    description: Verificação de saúde do sistema
+  - name: Autenticação
+    description: Endpoints de login e registro
+  - name: Posts
+    description: CRUD de postagens do blog
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Verificar saúde do sistema
+      description: Retorna status ok se o sistema estiver funcionando
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Sistema saudável
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: 2024-01-01T00:00:00.000Z
+
+  /auth/registrar:
+    post:
+      tags:
+        - Autenticação
+      summary: Registrar novo usuário
+      description: Cria uma nova conta de usuário docente
+      operationId: registrarUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - senha
+                - nome
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: docente@fiap.com.br
+                senha:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: senha123
+                nome:
+                  type: string
+                  minLength: 2
+                  example: João Silva
+                papel:
+                  type: string
+                  enum: [docente, admin]
+                  default: docente
+                  example: docente
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        '409':
+          description: Usuário já existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /auth/login:
+    post:
+      tags:
+        - Autenticação
+      summary: Login de usuário
+      description: Autentica um usuário e retorna token JWT
+      operationId: loginUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: docente@fiap.com.br
+                senha:
+                  type: string
+                  format: password
+                  example: senha123
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuario:
+                    $ref: '#/components/schemas/Usuario'
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /posts:
+    get:
+      tags:
+        - Posts
+      summary: Listar todos os posts
+      description: Retorna lista de todos os posts ordenados por data de criação (mais recentes primeiro)
+      operationId: listarPosts
+      responses:
+        '200':
+          description: Lista de posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    post:
+      tags:
+        - Posts
+      summary: Criar novo post
+      description: Cria uma nova postagem (requer autenticação)
+      operationId: criarPost
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarPostInput'
+      responses:
+        '201':
+          description: Post criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '403':
+          description: Permissão insuficiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /posts/search:
+    get:
+      tags:
+        - Posts
+      summary: Buscar posts por palavra-chave
+      description: Busca posts que contenham a palavra-chave no título ou conteúdo
+      operationId: buscarPosts
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Palavra-chave para busca
+          example: react
+      responses:
+        '200':
+          description: Lista de posts encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+  /posts/{id}:
+    get:
+      tags:
+        - Posts
+      summary: Buscar post por ID
+      description: Retorna detalhes de um post específico pelo UUID
+      operationId: buscarPostPorId
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID do post
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Post encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    put:
+      tags:
+        - Posts
+      summary: Atualizar post
+      description: Atualiza um post existente (requer autenticação)
+      operationId: atualizarPost
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID do post
+          example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtualizarPostInput'
+      responses:
+        '200':
+          description: Post atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroValidacao'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '403':
+          description: Permissão insuficiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '404':
+          description: Post não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+    delete:
+      tags:
+        - Posts
+      summary: Excluir post
+      description: Exclui um post permanentemente (requer autenticação)
+      operationId: excluirPost
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID do post
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '204':
+          description: Post excluído com sucesso
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '403':
+          description: Permissão insuficiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '404':
+          description: Post não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtido no endpoint /auth/login
+
+  schemas:
+    Usuario:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: docente@fiap.com.br
+        nome:
+          type: string
+          example: João Silva
+        papel:
+          type: string
+          enum: [docente, admin]
+          example: docente
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+
+    Post:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        title:
+          type: string
+          example: Introdução ao React
+        content:
+          type: string
+          example: React é uma biblioteca JavaScript para construir interfaces de usuário...
+        author:
+          type: string
+          example: João Silva
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+
+    CriarPostInput:
+      type: object
+      required:
+        - title
+        - content
+        - author
+      properties:
+        title:
+          type: string
+          minLength: 3
+          example: Introdução ao React
+        content:
+          type: string
+          minLength: 10
+          example: React é uma biblioteca JavaScript para construir interfaces de usuário...
+        author:
+          type: string
+          minLength: 2
+          example: João Silva
+
+    AtualizarPostInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          example: Introdução ao React
+        content:
+          type: string
+          minLength: 10
+          example: React é uma biblioteca JavaScript para construir interfaces de usuário...
+        author:
+          type: string
+          minLength: 2
+          example: João Silva
+
+    Erro:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Erro interno do servidor
+
+    ErroValidacao:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Falha na validação dos campos
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: Email inválido

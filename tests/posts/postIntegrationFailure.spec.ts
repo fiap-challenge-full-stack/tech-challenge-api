@@ -1,9 +1,18 @@
 import request from 'supertest';
 import app from '../../src/app';
 import { db } from '../../src/lib/db';
+import { criarTokenDeTeste, limparUsuariosDeTeste } from '../fixtures/auth';
 
 describe('Posts API - Failure Scenarios (Edge Cases)', () => {
+  let authToken: string;
+
+  beforeAll(async () => {
+    const authFixture = await criarTokenDeTeste('docente');
+    authToken = authFixture.token;
+  });
+
   afterAll(async () => {
+    await limparUsuariosDeTeste();
     await db.end();
   });
 
@@ -20,6 +29,7 @@ describe('Posts API - Failure Scenarios (Edge Cases)', () => {
     it('should return 400 when title is too short', async () => {
       const response = await request(app)
         .post('/posts')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ title: 'Ab', content: 'Content content content', author: 'Author' });
       
       expect(response.status).toBe(400);
@@ -29,6 +39,7 @@ describe('Posts API - Failure Scenarios (Edge Cases)', () => {
     it('should return 400 when content is too short', async () => {
       const response = await request(app)
         .post('/posts')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ title: 'Valid Title', content: 'Short', author: 'Author' });
       
       expect(response.status).toBe(400);

@@ -10,6 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  senha     String
+  nome      String
+  papel     String   @default("docente")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
 model Post {
   id        Int      @id @default(autoincrement())
   uuid      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid

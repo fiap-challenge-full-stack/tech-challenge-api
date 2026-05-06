@@ -1,9 +1,18 @@
 import request from 'supertest';
 import app from '../../src/app';
 import { db } from '../../src/lib/db';
+import { criarTokenDeTeste, limparUsuariosDeTeste } from '../fixtures/auth';
 
 describe('Posts API - Success Scenarios (Happy Path)', () => {
+  let authToken: string;
+
+  beforeAll(async () => {
+    const authFixture = await criarTokenDeTeste('docente');
+    authToken = authFixture.token;
+  });
+
   afterAll(async () => {
+    await limparUsuariosDeTeste();
     await db.end();
   });
 
@@ -17,6 +26,7 @@ describe('Posts API - Success Scenarios (Happy Path)', () => {
 
       const response = await request(app)
         .post('/posts')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(payload);
 
       expect(response.status).toBe(201);

@@ -65,6 +65,7 @@ http/                 # Exemplos de requisições para testes manuais
 ### 📋 Pré-requisitos
 *   [Docker](https://www.docker.com/) instalado.
 *   [Node.js](https://nodejs.org/) (opcional, para execução local).
+*   Variáveis de ambiente configuradas (veja `.env.example`).
 
 ### ⚡ Instalação Rápida (via Docker)
 
@@ -77,13 +78,20 @@ http/                 # Exemplos de requisições para testes manuais
 2.  **Configurar variáveis de ambiente**:
     ```bash
     cp .env.example .env
+    # Edite o .env com suas configurações (DATABASE_URL, JWT_SECRET, etc.)
     ```
 
 3.  **Subir containers (Banco e API)**:
     ```bash
     docker compose up -d
     ```
-    A API estará disponível em `http://localhost:3000`.
+    A API estará disponível em `http://localhost:3001`.
+
+4.  **Executar migrations e seed**:
+    ```bash
+    docker compose exec api npx prisma migrate dev
+    docker compose exec api npm run seed
+    ```
 
 ### 🛠️ Execução em Modo Desenvolvimento
 
@@ -97,15 +105,26 @@ Se preferir rodar a API fora do Docker:
 
 ## 🔗 Endpoints da API
 
+### Autenticação
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| `POST` | `/auth/registrar` | Registrar novo usuário docente |
+| `POST` | `/auth/login` | Login e obter token JWT |
+
+### Posts
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
 | `GET` | `/health` | Verifica saúde do sistema |
 | `GET` | `/posts` | Lista todas as postagens (Recentes primeiro) |
 | `GET` | `/posts/:id` | Busca detalhes de um post específico (UUID) |
 | `GET` | `/posts/search?q=...` | Busca posts por palavra-chave no título/conteúdo |
-| `POST` | `/posts` | Cria uma nova postagem |
-| `PUT` | `/posts/:id` | Atualiza uma postagem existente |
-| `DELETE` | `/posts/:id` | Remove uma postagem permanentemente |
+| `POST` | `/posts` | Cria uma nova postagem (Requer autenticação) |
+| `PUT` | `/posts/:id` | Atualiza uma postagem existente (Requer autenticação) |
+| `DELETE` | `/posts/:id` | Remove uma postagem permanentemente (Requer autenticação) |
+
+> 🔐 **Autenticação**: As rotas de escrita (POST, PUT, DELETE) requerem autenticação via JWT. Inclua o header `Authorization: Bearer <token>` nas requisições.
+
+> 📖 **Documentação OpenAPI**: Para especificações completas da API, veja [docs/openapi.yaml](./docs/openapi.yaml).
 
 > 📖 **Documentação BDD**: Para detalhes sobre as regras de negócio de cada endpoint, veja os [Cenários de Sucesso](./docs/bdd/cenarios-sucesso.md) e [Cenários de Falha](./docs/bdd/cenarios-falha.md).
 
