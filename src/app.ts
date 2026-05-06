@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { postRouter } from './posts/postRoutes';
 import { authRouter } from './auth/authRoutes';
+import metricsRouter from './metrics/metricsRoutes';
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 app.use('/auth', authRouter);
 app.use('/posts', postRouter);
+app.use('/metrics', metricsRouter);
 
 // Tratador de erro global (deve ser o último middleware)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
