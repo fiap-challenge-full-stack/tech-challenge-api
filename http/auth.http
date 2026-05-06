@@ -1,0 +1,60 @@
+### Autenticação
+
+### Registrar novo usuário
+POST http://localhost:3001/auth/registrar
+Content-Type: application/json
+
+{
+  "email": "docente1@fiap.com.br",
+  "senha": "senha123",
+  "nome": "Professor João Silva",
+  "papel": "docente"
+}
+
+### Login
+POST http://localhost:3001/auth/login
+Content-Type: application/json
+
+{
+  "email": "docente1@fiap.com.br",
+  "senha": "senha123"
+}
+
+### Posts (Públicos)
+
+### Listar todos os posts
+GET http://localhost:3001/posts
+
+### Buscar post por ID
+GET http://localhost:3001/posts/{{post_uuid}}
+
+### Buscar posts por palavra-chave
+GET http://localhost:3001/posts/search?q=react
+
+### Posts (Protegidos - Requer Token)
+
+### Criar novo post
+POST http://localhost:3001/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Introdução ao React",
+  "content": "React é uma biblioteca JavaScript para construir interfaces de usuário. Neste post, vamos explorar os conceitos fundamentais como componentes, estado e props.",
+  "author": "Professor João Silva"
+}
+
+### Atualizar post
+PUT http://localhost:3001/posts/{{post_uuid}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Introdução ao React - Atualizado",
+  "content": "React é uma biblioteca JavaScript para construir interfaces de usuário. Neste post atualizado, vamos explorar os conceitos fundamentais como componentes, estado e props.",
+  "author": "Professor João Silva"
+}
+
+### Excluir post
+DELETE http://localhost:3001/posts/{{post_uuid}}
+Authorization: Bearer {{token}}
