@@ -1,39 +1,46 @@
-# Stage 1: Build
-FROM node:20-alpine AS build
+# Stage 1: dependencies for build
+FROM node:20-alpine AS deps
 
-# Instalar dependências do sistema necessárias para o Prisma
 RUN apk add --no-cache openssl libc6-compat
-
 WORKDIR /app
 
-# Instalar dependências primeiro para cachear camadas
 COPY package*.json ./
 COPY prisma ./prisma/
+RUN npm ci
 
-RUN npm install
+# Stage 2: application build
+FROM node:20-alpine AS build
 
-# Copiar o resto do código
+RUN apk add --no-cache openssl libc6-compat
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Gerar o Prisma Client e fazer o build para produção
 RUN npx prisma generate
 RUN npm run build
 
-# Stage 2: Runtime
-FROM node:20-alpine AS runtime
+# Stage 3: production dependencies only
+FROM node:20-alpine AS prod-deps
 
-# Instalar dependências do sistema necessárias para o Prisma no runtime
 RUN apk add --no-cache openssl libc6-compat
-
 WORKDIR /app
 
-# Copiar apenas os arquivos necessários do build
-COPY --from=build /app/package*.json ./
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm ci --omit=dev && npx prisma generate
+
+# Stage 4: runtime
+FROM node:20-alpine AS runtime
+
+RUN apk add --no-cache openssl libc6-compat
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
+COPY package*.json ./
 
-# Expor a porta 3000
 EXPOSE 3000
-
 CMD ["npm", "start"]

@@ -4,6 +4,7 @@ import { createUsuarioSchema, loginSchema } from './usuarioSchemas';
 import { ZodError } from 'zod';
 import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
+import { TestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -50,10 +51,16 @@ export class AuthController {
     });
   }
 
-  async registrar(req: Request, res: Response): Promise<Response> {
+  async registrar(req: TestModeRequest, res: Response): Promise<Response> {
     try {
       const validatedData = createUsuarioSchema.parse(req.body);
       const result = await this.authService.registrar(validatedData);
+      
+      // Registrar UUID em modo de teste
+      if (req.isTestMode && req.testSessionId && result.usuario.uuid) {
+        registerTestUuid(req.testSessionId, result.usuario.uuid);
+      }
+      
       return res.status(201).json({
         usuario: result.usuario.toJSON(),
         token: result.token

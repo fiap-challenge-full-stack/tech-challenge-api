@@ -18,7 +18,7 @@ postRouter.get('/:id', (req, res) => controller.getById(req, res));
 
 // Rotas protegidas (escrita) - requer autenticação
 postRouter.post('/', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.create(req, res));
-postRouter.put('/:id', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.update(req, res));
+postRouter.patch('/:id', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.update(req, res));
 postRouter.delete('/:id', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.delete(req, res));
 
 export { postRouter };

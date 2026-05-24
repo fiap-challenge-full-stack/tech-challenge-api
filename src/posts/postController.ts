@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
 import { createSpan } from '../observability/tracing';
+import { TestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
 
 export class PostController {
   constructor(private readonly postService: PostService) {}
@@ -44,11 +45,17 @@ export class PostController {
     });
   }
 
-  async create(req: Request, res: Response): Promise<Response> {
+  async create(req: TestModeRequest, res: Response): Promise<Response> {
     return createSpan('post.create', async () => {
       try {
         const validatedData = createPostSchema.parse(req.body);
         const post = await this.postService.create(validatedData);
+        
+        // Registrar UUID em modo de teste
+        if (req.isTestMode && req.testSessionId && post.uuid) {
+          registerTestUuid(req.testSessionId, post.uuid);
+        }
+        
         return res.status(201).json(post);
       } catch (error) {
         return this.handleError(error, res);

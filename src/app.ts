@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import { postRouter } from './posts/postRoutes';
 import { authRouter } from './auth/authRoutes';
 import metricsRouter from './metrics/metricsRoutes';
+import { testModeMiddleware } from './shared/testModeMiddleware';
+import { testCleanupRouter } from './shared/testCleanupRoutes';
 
 const app = express();
 
@@ -12,6 +14,7 @@ app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(testModeMiddleware);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -20,6 +23,7 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/auth', authRouter);
 app.use('/posts', postRouter);
 app.use('/metrics', metricsRouter);
+app.use('/test', testCleanupRouter);
 
 // Tratador de erro global (deve ser o último middleware)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
