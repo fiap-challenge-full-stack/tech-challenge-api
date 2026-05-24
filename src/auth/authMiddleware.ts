@@ -11,14 +11,13 @@ export interface AuthRequest extends Request {
 }
 
 export function autenticar(req: AuthRequest, res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization;
+  // Aceitar token do cookie ou do header Authorization
+  const token = req.cookies.token || req.headers.authorization?.substring(7);
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     res.status(401).json({ message: 'Token não fornecido' });
     return;
   }
-
-  const token = authHeader.substring(7);
 
   try {
     const JWT_SECRET = process.env.JWT_SECRET;

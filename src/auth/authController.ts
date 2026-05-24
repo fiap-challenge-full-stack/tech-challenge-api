@@ -61,9 +61,16 @@ export class AuthController {
         registerTestUuid(req.testSessionId, result.usuario.uuid);
       }
       
+      // Enviar token em cookie HttpOnly para segurança
+      res.cookie('token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 8 * 60 * 60 * 1000 // 8 horas
+      });
+      
       return res.status(201).json({
-        usuario: result.usuario.toJSON(),
-        token: result.token
+        usuario: result.usuario.toJSON()
       });
     } catch (error) {
       return this.handleError(error, res);
@@ -74,9 +81,17 @@ export class AuthController {
     try {
       const validatedData = loginSchema.parse(req.body);
       const result = await this.authService.login(validatedData);
+      
+      // Enviar token em cookie HttpOnly para segurança
+      res.cookie('token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 8 * 60 * 60 * 1000 // 8 horas
+      });
+      
       return res.status(200).json({
-        usuario: result.usuario.toJSON(),
-        token: result.token
+        usuario: result.usuario.toJSON()
       });
     } catch (error) {
       return this.handleError(error, res);

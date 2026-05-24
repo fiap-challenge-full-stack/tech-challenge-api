@@ -7,14 +7,37 @@ import { authRouter } from './auth/authRoutes';
 import metricsRouter from './metrics/metricsRoutes';
 import { testModeMiddleware } from './shared/testModeMiddleware';
 import { testCleanupRouter } from './shared/testCleanupRoutes';
+import { apiLimiter, authLimiter } from './middleware/rateLimiter';
+import { setCSPHeaders } from './middleware/csp';
 
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(setCSPHeaders);
+
+// Configurar CORS com origens específicas
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://seu-dominio.com']
+  : ['http://localhost:3000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Não permitido pelo CORS'))
+    }
+  },
+  credentials: true
+}));
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(testModeMiddleware);
+
+// Aplicar rate limiting
+app.use('/api/', apiLimiter)
+app.use('/api/auth', authLimiter)
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
