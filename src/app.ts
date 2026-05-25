@@ -19,7 +19,7 @@ app.use(setCSPHeaders);
 // Configurar CORS com origens específicas
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? ['https://seu-dominio.com']
-  : ['http://localhost:3000'];
+  : ['http://localhost:3000', 'http://localhost:3001'];
 
 app.use(cors({
   origin: (origin, callback) => {
