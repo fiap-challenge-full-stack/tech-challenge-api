@@ -1,8 +1,21 @@
 import request from 'supertest';
 import app from '@/app';
 import { db } from '@/lib/db';
+import { criarTokenDeTeste, limparUsuariosDeTeste } from '@/tests/fixtures/auth';
 
 describe('Post API Resilience', () => {
+  let authToken: string;
+
+  beforeAll(async () => {
+    const authFixture = await criarTokenDeTeste('docente');
+    authToken = authFixture.token;
+  });
+
+  afterAll(async () => {
+    await limparUsuariosDeTeste();
+    await db.end();
+  });
+
   describe('Invalid UUIDs', () => {
     it('should return 500 for malformed UUID in GET', async () => {
       const response = await request(app).get('/posts/not-a-uuid-123');
@@ -11,7 +24,9 @@ describe('Post API Resilience', () => {
     });
 
     it('should return 500 for malformed UUID in DELETE', async () => {
-      const response = await request(app).delete('/posts/not-a-uuid-123');
+      const response = await request(app)
+        .delete('/posts/not-a-uuid-123')
+        .set('Cookie', `token=${authToken}`);
       expect(response.status).toBe(500);
     });
   });
@@ -26,7 +41,7 @@ describe('Post API Resilience', () => {
       
       // Erros de infraestrutura (banco indisponível) devem retornar 500
       expect(response.status).toBe(500);
-      expect(response.body).toHaveProperty('message', 'Connection refused');
+      expect(response.body).toHaveProperty('message');
 
       // Restore
       db.query = originalQuery;

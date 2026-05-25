@@ -23,9 +23,9 @@ describe('Repository Baseline Comparison (Native SQL vs Direct Queries)', () => 
   });
 
   async function createTestPost(title: string, content: string, author: string): Promise<Post> {
-    const res = await db.query('INSERT INTO "posts" (title, content, author, "updatedAt") VALUES ($1, $2, $3, NOW()) RETURNING *', [title, content, author]);
+    const res = await db.query('INSERT INTO "posts" (title, content, author, updated_at) VALUES ($1, $2, $3, NOW()) RETURNING *', [title, content, author]);
     const row = res.rows[0];
-    const created = new Post(row.id, row.uuid, row.title, row.content, row.author, new Date(row.createdAt), new Date(row.updatedAt));
+    const created = new Post(row.id, row.uuid, row.title, row.content, row.author, new Date(row.created_at), new Date(row.updated_at));
     if (created.uuid) testPostsUuids.push(created.uuid);
     return created;
   }
@@ -37,7 +37,7 @@ describe('Repository Baseline Comparison (Native SQL vs Direct Queries)', () => 
     const nativeResults = await nativeSqlRepo.findAll();
 
     // Baseline: Direct SQL check
-    const { rows } = await db.query('SELECT * FROM "posts" ORDER BY "createdAt" DESC');
+    const { rows } = await db.query('SELECT * FROM "posts" ORDER BY created_at DESC');
     
     expect(nativeResults.length).toBeGreaterThanOrEqual(2);
     expect(nativeResults.length).toBe(rows.length);
@@ -77,7 +77,7 @@ describe('Repository Baseline Comparison (Native SQL vs Direct Queries)', () => 
     const { rows } = await db.query(`
       SELECT * FROM "posts"
       WHERE title ILIKE $1 OR content ILIKE $1
-      ORDER BY "createdAt" DESC;
+      ORDER BY created_at DESC;
     `, [`%${uniqueTerm}%`]);
 
     expect(nativeResults.length).toBe(2);
