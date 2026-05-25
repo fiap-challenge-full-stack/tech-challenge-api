@@ -12,7 +12,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/tests/*": ["tests/*"]
     },
     "types": ["jest", "node"]
   },
