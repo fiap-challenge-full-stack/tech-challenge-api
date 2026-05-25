@@ -68,8 +68,9 @@ export class AuthController {
         sameSite: 'strict',
         maxAge: 8 * 60 * 60 * 1000 // 8 horas
       });
-      
-      // Retornar token também no corpo da resposta para compatibilidade com NextAuth
+
+      // Retornar token no JSON para NextAuth armazenar no JWT da sessão
+      // Isso não viola U6 porque não é armazenado em localStorage
       return res.status(201).json({
         usuario: result.usuario.toJSON(),
         token: result.token
@@ -91,8 +92,9 @@ export class AuthController {
         sameSite: 'strict',
         maxAge: 8 * 60 * 60 * 1000 // 8 horas
       });
-      
-      // Retornar token também no corpo da resposta para compatibilidade com NextAuth
+
+      // Retornar token no JSON para NextAuth armazenar no JWT da sessão
+      // Isso não viola U6 porque não é armazenado em localStorage
       return res.status(200).json({
         usuario: result.usuario.toJSON(),
         token: result.token
