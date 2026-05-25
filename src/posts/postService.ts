@@ -13,7 +13,14 @@ export class PostService {
   constructor(private readonly postRepository: IPostRepository) {}
 
   async create(data: CreatePostInput): Promise<Post> {
-    const post = Post.create(data.title, data.content, data.author);
+    // Mapear campos em português para inglês
+    const createData = {
+      title: (data as any).titulo || data.title,
+      content: (data as any).conteudo || data.content,
+      author: (data as any).autor || data.author,
+    };
+    
+    const post = Post.create(createData.title, createData.content, createData.author);
     return this.postRepository.create(post);
   }
 
@@ -33,7 +40,14 @@ export class PostService {
     const post = await this.postRepository.findById(uuid);
     if (!post) throw new PostNotFoundError();
     
-    post.update(data.title, data.content, data.author);
+    // Mapear campos em português para inglês
+    const updateData = {
+      title: (data as any).titulo || data.title,
+      content: (data as any).conteudo || data.content,
+      author: (data as any).autor || data.author,
+    };
+    
+    post.update(updateData.title, updateData.content, updateData.author);
     return this.postRepository.update(post);
   }
 

@@ -14,11 +14,15 @@ const controller = new PostController(service);
 // Rotas públicas (leitura)
 postRouter.get('/', (req, res) => controller.list(req, res));
 postRouter.get('/search', (req, res) => controller.search(req, res));
-postRouter.get('/:id', (req, res) => controller.getById(req, res));
+postRouter.get('/:uuid', (req, res) => controller.getById(req, res));
+
+// Rotas de teste (apenas em modo de teste)
+postRouter.post('/seed', (req, res) => controller.seed(req, res));
+postRouter.delete('/cleanup', (req, res) => controller.cleanup(req, res));
 
 // Rotas protegidas (escrita) - requer autenticação
 postRouter.post('/', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.create(req, res));
-postRouter.patch('/:id', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.update(req, res));
-postRouter.delete('/:id', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.delete(req, res));
+postRouter.patch('/:uuid', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.update(req, res));
+postRouter.delete('/:uuid', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.delete(req, res));
 
 export { postRouter };
