@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { postRouter } from './posts/postRoutes';
 import { authRouter } from './auth/authRoutes';
 import metricsRouter from './metrics/metricsRoutes';
@@ -33,6 +34,7 @@ app.use(cors({
 
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(cookieParser());
 app.use(testModeMiddleware);
 
 // Aplicar rate limiting

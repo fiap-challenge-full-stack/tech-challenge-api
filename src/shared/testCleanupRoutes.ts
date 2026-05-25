@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { TestCleanupService } from './testCleanupService';
-import { TestModeRequest } from './testModeMiddleware';
+import { ITestModeRequest } from './testModeMiddleware';
 
 const router = Router();
 const cleanupService = new TestCleanupService();
 
 // Endpoint para limpar dados de uma sessão de teste específica
-router.delete('/cleanup/:sessionId', async (req: TestModeRequest, res) => {
+router.delete('/cleanup/:sessionId', async (req: ITestModeRequest, res) => {
   try {
     const { sessionId } = req.params;
     const sessionIdStr = typeof sessionId === 'string' ? sessionId : sessionId[0];
@@ -18,7 +18,7 @@ router.delete('/cleanup/:sessionId', async (req: TestModeRequest, res) => {
 });
 
 // Endpoint para limpar dados da sessão atual (baseado no header)
-router.delete('/cleanup', async (req: TestModeRequest, res) => {
+router.delete('/cleanup', async (req: ITestModeRequest, res) => {
   try {
     if (!req.testSessionId) {
       return res.status(400).json({ message: 'Sessão de teste não encontrada' });

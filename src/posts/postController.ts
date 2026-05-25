@@ -5,7 +5,7 @@ import { ZodError } from 'zod';
 import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
 import { createSpan } from '../observability/tracing';
-import { TestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
+import { ITestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
 
 export class PostController {
   constructor(private readonly postService: PostService) {}
@@ -45,7 +45,7 @@ export class PostController {
     });
   }
 
-  async create(req: TestModeRequest, res: Response): Promise<Response> {
+  async create(req: ITestModeRequest, res: Response): Promise<Response> {
     return createSpan('post.create', async () => {
       try {
         const validatedData = createPostSchema.parse(req.body);

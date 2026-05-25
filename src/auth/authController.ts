@@ -4,7 +4,7 @@ import { createUsuarioSchema, loginSchema } from './usuarioSchemas';
 import { ZodError } from 'zod';
 import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
-import { TestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
+import { ITestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -51,7 +51,7 @@ export class AuthController {
     });
   }
 
-  async registrar(req: TestModeRequest, res: Response): Promise<Response> {
+  async registrar(req: ITestModeRequest, res: Response): Promise<Response> {
     try {
       const validatedData = createUsuarioSchema.parse(req.body);
       const result = await this.authService.registrar(validatedData);
@@ -69,8 +69,10 @@ export class AuthController {
         maxAge: 8 * 60 * 60 * 1000 // 8 horas
       });
       
+      // Retornar token também no corpo da resposta para compatibilidade com NextAuth
       return res.status(201).json({
-        usuario: result.usuario.toJSON()
+        usuario: result.usuario.toJSON(),
+        token: result.token
       });
     } catch (error) {
       return this.handleError(error, res);
@@ -90,8 +92,10 @@ export class AuthController {
         maxAge: 8 * 60 * 60 * 1000 // 8 horas
       });
       
+      // Retornar token também no corpo da resposta para compatibilidade com NextAuth
       return res.status(200).json({
-        usuario: result.usuario.toJSON()
+        usuario: result.usuario.toJSON(),
+        token: result.token
       });
     } catch (error) {
       return this.handleError(error, res);

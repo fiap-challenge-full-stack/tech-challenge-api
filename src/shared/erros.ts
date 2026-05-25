@@ -27,7 +27,7 @@ export enum CodigoErro {
   SERVIDOR_INDISPONIVEL = 'SRV_002',
 }
 
-export interface DetalhesErro {
+export interface IDetalhesErro {
   codigo: CodigoErro;
   mensagem: string;
   detalhes?: unknown;
@@ -43,7 +43,7 @@ export class ErroAplicacao extends Error {
     this.name = 'ErroAplicacao';
   }
 
-  toJSON(): DetalhesErro {
+  toJSON(): IDetalhesErro {
     return {
       codigo: this.codigo,
       mensagem: this.message,

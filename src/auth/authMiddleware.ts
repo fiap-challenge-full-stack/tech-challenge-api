@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export interface AuthRequest extends Request {
+export interface IAuthRequest extends Request {
   usuario?: {
     uuid: string;
     email: string;
@@ -10,9 +10,16 @@ export interface AuthRequest extends Request {
   };
 }
 
-export function autenticar(req: AuthRequest, res: Response, next: NextFunction): void {
+export function autenticar(req: IAuthRequest, res: Response, next: NextFunction): void {
   // Aceitar token do cookie ou do header Authorization
-  const token = req.cookies.token || req.headers.authorization?.substring(7);
+  let token = req.cookies.token;
+  
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
 
   if (!token) {
     res.status(401).json({ message: 'Token não fornecido' });
@@ -39,7 +46,7 @@ export function autenticar(req: AuthRequest, res: Response, next: NextFunction):
 }
 
 export function autorizar(papeisPermitidos: string[] = ['docente', 'admin']) {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+  return (req: IAuthRequest, res: Response, next: NextFunction): void => {
     if (!req.usuario) {
       res.status(401).json({ message: 'Usuário não autenticado' });
       return;

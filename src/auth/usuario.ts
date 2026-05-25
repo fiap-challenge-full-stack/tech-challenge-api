@@ -1,4 +1,4 @@
-export interface UsuarioProps {
+export interface IUsuarioProps {
   uuid: string;
   email: string;
   senha: string;
@@ -17,7 +17,7 @@ export class Usuario {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
-  constructor(props: UsuarioProps) {
+  constructor(props: IUsuarioProps) {
     this.uuid = props.uuid;
     this.email = props.email;
     this.senha = props.senha;
@@ -27,7 +27,7 @@ export class Usuario {
     this.updatedAt = props.updatedAt;
   }
 
-  static create(email: string, senha: string, nome: string, papel: string = 'docente'): Omit<UsuarioProps, 'uuid' | 'createdAt' | 'updatedAt'> {
+  static create(email: string, senha: string, nome: string, papel: string = 'docente'): Omit<IUsuarioProps, 'uuid' | 'createdAt' | 'updatedAt'> {
     return {
       email,
       senha,

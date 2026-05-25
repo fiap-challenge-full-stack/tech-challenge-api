@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-export interface TestModeRequest extends Request {
+export interface ITestModeRequest extends Request {
   isTestMode?: boolean;
   testSessionId?: string;
 }
@@ -8,7 +8,7 @@ export interface TestModeRequest extends Request {
 // Armazenamento em memória para UUIDs criados em modo de teste
 const testModeData = new Map<string, Set<string>>();
 
-export function testModeMiddleware(req: TestModeRequest, res: Response, next: NextFunction): void {
+export function testModeMiddleware(req: ITestModeRequest, res: Response, next: NextFunction): void {
   const testModeHeader = req.headers['x-test-mode'];
   
   if (testModeHeader === 'true') {
