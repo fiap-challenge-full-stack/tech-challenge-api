@@ -6,6 +6,9 @@ import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
 import { createSpan } from '../observability/tracing';
 import { getTestUuids, ITestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
+import { IAuthRequest } from '../auth/authMiddleware';
+
+type ICreatePostRequest = ITestModeRequest & IAuthRequest;
 
 export class PostController {
   constructor(private readonly postService: PostService) {}
@@ -51,12 +54,21 @@ export class PostController {
     });
   }
 
-  async create(req: ITestModeRequest, res: Response): Promise<Response> {
+  async create(req: ICreatePostRequest, res: Response): Promise<Response> {
     return createSpan('post.create', async () => {
       try {
+        if (!req.usuario) {
+          return res.status(401).json({
+            codigo: CodigoErro.AUTHZ_NAO_AUTENTICADO,
+            message: 'Usuário não autenticado',
+          });
+        }
+
         const validatedData = createPostSchema.parse(req.body);
-        const post = await this.postService.create(validatedData);
-        
+        // Autoria sempre derivada da sessão autenticada (API-06) — qualquer
+        // campo `autor` enviado no corpo é ignorado.
+        const post = await this.postService.create(validatedData, req.usuario.nome);
+
         // Registrar UUID em modo de teste
         if (req.isTestMode && req.testSessionId && post.uuid) {
           registerTestUuid(req.testSessionId, post.uuid);
@@ -100,10 +112,9 @@ export class PostController {
           const postData = {
             titulo: `Post de Teste ${Date.now()}-${i}`,
             conteudo: `Conteúdo de teste para post ${i}. Lorem ipsum dolor sit amet.`,
-            autor: `Autor Teste ${i}`
           };
 
-          const post = await this.postService.create(postData);
+          const post = await this.postService.create(postData, `Autor Teste ${i}`);
           
           if (req.testSessionId && post.uuid) {
             registerTestUuid(req.testSessionId, post.uuid);

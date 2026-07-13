@@ -20,11 +20,11 @@ describe('PostService', () => {
 
   describe('create', () => {
     it('should create a new post using the repository', async () => {
-      const postData = { titulo: 'Test', conteudo: 'Content', autor: 'Author' };
-      const createdPost = Post.create(postData.titulo, postData.conteudo, postData.autor);
+      const postData = { titulo: 'Test', conteudo: 'Content' };
+      const createdPost = Post.create(postData.titulo, postData.conteudo, 'Author');
       mockPostRepository.create.mockResolvedValue(createdPost);
 
-      const result = await postService.create(postData);
+      const result = await postService.create(postData, 'Author');
 
       expect(mockPostRepository.create).toHaveBeenCalledWith(expect.any(Post));
       expect(result).toBe(createdPost);

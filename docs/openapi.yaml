@@ -18,6 +18,8 @@ tags:
     description: Verificação de saúde do sistema
   - name: Autenticação
     description: Endpoints de login e registro
+  - name: Usuários
+    description: Gestão administrativa de usuários (requer autenticação; a listagem e criação com papel arbitrário exigem papel admin)
   - name: Posts
     description: CRUD de postagens do blog
 
@@ -50,7 +52,12 @@ paths:
       tags:
         - Autenticação
       summary: Registrar novo usuário
-      description: Cria uma nova conta de usuário docente
+      description: >-
+        Cria uma nova conta de usuário público. O papel é sempre definido
+        pelo servidor como `docente`; qualquer campo `papel` enviado pelo
+        cliente é ignorado (proteção contra autopromoção). Para criar
+        usuários com outros papéis (ex.: admin, aluno), utilize
+        `POST /usuarios` autenticado como admin.
       operationId: registrarUsuario
       requestBody:
         required: true
@@ -70,17 +77,13 @@ paths:
                 senha:
                   type: string
                   format: password
-                  minLength: 6
-                  example: senha123
+                  minLength: 8
+                  description: Deve conter maiúscula, minúscula, número e caractere especial
+                  example: Senha123@
                 nome:
                   type: string
                   minLength: 2
                   example: João Silva
-                papel:
-                  type: string
-                  enum: [docente, admin]
-                  default: docente
-                  example: docente
       responses:
         '201':
           description: Usuário criado com sucesso
@@ -169,6 +172,227 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
+
+  /usuarios:
+    get:
+      tags:
+        - Usuários
+      summary: Listar usuários (somente admin)
+      description: Retorna usuários paginados, com filtro opcional por papel. Exige papel admin.
+      operationId: listarUsuarios
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: papel
+          in: query
+          schema:
+            type: string
+            enum: [docente, admin, aluno]
+      responses:
+        '200':
+          description: Lista paginada de usuários
+        '401':
+          description: Não autenticado
+        '403':
+          description: Permissão insuficiente (requer admin)
+    post:
+      tags:
+        - Usuários
+      summary: Criar usuário (somente admin)
+      description: Permite que um admin crie um usuário com papel arbitrário.
+      operationId: criarUsuario
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, senha, nome]
+              properties:
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+                  format: password
+                  minLength: 8
+                nome:
+                  type: string
+                  minLength: 2
+                papel:
+                  type: string
+                  enum: [docente, admin, aluno]
+                  default: docente
+      responses:
+        '201':
+          description: Usuário criado
+        '400':
+          description: "Dados inválidos (ex.: senha fraca)"
+        '401':
+          description: Não autenticado
+        '403':
+          description: Permissão insuficiente (requer admin)
+        '409':
+          description: Email já está em uso
+
+  /usuarios/{uuid}:
+    get:
+      tags:
+        - Usuários
+      summary: Consultar usuário por UUID
+      description: Admin pode consultar qualquer usuário; um usuário comum só pode consultar a si próprio.
+      operationId: obterUsuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Usuário encontrado
+        '401':
+          description: Não autenticado
+        '403':
+          description: Permissão insuficiente
+        '404':
+          description: Usuário não encontrado
+    put:
+      tags:
+        - Usuários
+      summary: Atualizar usuário (substituição parcial suportada)
+      operationId: atualizarUsuarioPut
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+                  format: password
+                papel:
+                  type: string
+                  enum: [docente, admin, aluno]
+                  description: Somente admin pode alterar o papel de um usuário
+      responses:
+        '200':
+          description: Usuário atualizado
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autenticado
+        '403':
+          description: Permissão insuficiente
+        '404':
+          description: Usuário não encontrado
+        '409':
+          description: Email já está em uso, ou tentativa de rebaixar o último admin
+    patch:
+      tags:
+        - Usuários
+      summary: Atualizar parcialmente usuário
+      operationId: atualizarUsuarioPatch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+                  format: password
+                papel:
+                  type: string
+                  enum: [docente, admin, aluno]
+      responses:
+        '200':
+          description: Usuário atualizado
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autenticado
+        '403':
+          description: Permissão insuficiente
+        '404':
+          description: Usuário não encontrado
+        '409':
+          description: Email já está em uso, ou tentativa de rebaixar o último admin
+    delete:
+      tags:
+        - Usuários
+      summary: Remover usuário
+      description: >-
+        Admin pode remover qualquer usuário; um usuário comum pode remover a
+        própria conta (autodeleção). O último admin do sistema não pode ser
+        removido.
+      operationId: removerUsuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Usuário removido
+        '401':
+          description: Não autenticado
+        '403':
+          description: Permissão insuficiente
+        '404':
+          description: Usuário não encontrado
+        '409':
+          description: Não é possível remover o último admin do sistema
 
   /posts:
     get:
@@ -434,7 +658,7 @@ components:
           example: João Silva
         papel:
           type: string
-          enum: [docente, admin]
+          enum: [docente, admin, aluno]
           example: docente
         createdAt:
           type: string

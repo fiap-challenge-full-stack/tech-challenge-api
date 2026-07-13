@@ -1,6 +1,33 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Usuario } from './usuario';
-import { IUsuarioRepository } from './usuarioRepository';
+import {
+  IAtualizarUsuarioDados,
+  IFindAllUsuariosOptions,
+  IFindAllUsuariosResult,
+  IUsuarioRepository,
+} from './usuarioRepository';
+
+type UsuarioRow = {
+  uuid: string;
+  email: string;
+  senha: string;
+  nome: string;
+  papel: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function toDomain(row: UsuarioRow): Usuario {
+  return new Usuario({
+    uuid: row.uuid,
+    email: row.email,
+    senha: row.senha,
+    nome: row.nome,
+    papel: row.papel,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  });
+}
 
 export class PrismaUsuarioRepository implements IUsuarioRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -15,15 +42,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       }
     });
 
-    return new Usuario({
-      uuid: novoUsuario.uuid,
-      email: novoUsuario.email,
-      senha: novoUsuario.senha,
-      nome: novoUsuario.nome,
-      papel: novoUsuario.papel,
-      createdAt: novoUsuario.createdAt,
-      updatedAt: novoUsuario.updatedAt
-    });
+    return toDomain(novoUsuario);
   }
 
   async findByEmail(email: string): Promise<Usuario | null> {
@@ -33,15 +52,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
 
     if (!usuario) return null;
 
-    return new Usuario({
-      uuid: usuario.uuid,
-      email: usuario.email,
-      senha: usuario.senha,
-      nome: usuario.nome,
-      papel: usuario.papel,
-      createdAt: usuario.createdAt,
-      updatedAt: usuario.updatedAt
-    });
+    return toDomain(usuario);
   }
 
   async findByUuid(uuid: string): Promise<Usuario | null> {
@@ -51,28 +62,49 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
 
     if (!usuario) return null;
 
-    return new Usuario({
-      uuid: usuario.uuid,
-      email: usuario.email,
-      senha: usuario.senha,
-      nome: usuario.nome,
-      papel: usuario.papel,
-      createdAt: usuario.createdAt,
-      updatedAt: usuario.updatedAt
-    });
+    return toDomain(usuario);
   }
 
-  async findAll(): Promise<Usuario[]> {
-    const usuarios = await this.prisma.usuario.findMany();
+  async findAll(options?: IFindAllUsuariosOptions): Promise<IFindAllUsuariosResult> {
+    const page = options?.page ?? 1;
+    const pageSize = options?.pageSize ?? 10;
+    const where: Prisma.UsuarioWhereInput = options?.papel ? { papel: options.papel } : {};
 
-    return usuarios.map(usuario => new Usuario({
-      uuid: usuario.uuid,
-      email: usuario.email,
-      senha: usuario.senha,
-      nome: usuario.nome,
-      papel: usuario.papel,
-      createdAt: usuario.createdAt,
-      updatedAt: usuario.updatedAt
-    }));
+    const [usuarios, total] = await this.prisma.$transaction([
+      this.prisma.usuario.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.usuario.count({ where }),
+    ]);
+
+    return {
+      usuarios: usuarios.map(toDomain),
+      total,
+    };
+  }
+
+  async update(uuid: string, dados: IAtualizarUsuarioDados): Promise<Usuario> {
+    const usuarioAtualizado = await this.prisma.usuario.update({
+      where: { uuid },
+      data: {
+        ...(dados.nome !== undefined ? { nome: dados.nome } : {}),
+        ...(dados.email !== undefined ? { email: dados.email } : {}),
+        ...(dados.senha !== undefined ? { senha: dados.senha } : {}),
+        ...(dados.papel !== undefined ? { papel: dados.papel } : {}),
+      },
+    });
+
+    return toDomain(usuarioAtualizado);
+  }
+
+  async delete(uuid: string): Promise<void> {
+    await this.prisma.usuario.delete({ where: { uuid } });
+  }
+
+  async countByPapel(papel: string): Promise<number> {
+    return this.prisma.usuario.count({ where: { papel } });
   }
 }

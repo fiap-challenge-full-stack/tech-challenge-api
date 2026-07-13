@@ -12,8 +12,10 @@ export class PostNotFoundError extends Error {
 export class PostService {
   constructor(private readonly postRepository: IPostRepository) {}
 
-  async create(data: CreatePostInput): Promise<Post> {
-    const post = Post.create(data.titulo, data.conteudo, data.autor);
+  // `autor` é sempre derivado da sessão autenticada (API-06), nunca do corpo
+  // da requisição — por isso é recebido como parâmetro explícito e separado.
+  async create(data: CreatePostInput, autor: string): Promise<Post> {
+    const post = Post.create(data.titulo, data.conteudo, autor);
     return this.postRepository.create(post);
   }
 
@@ -33,7 +35,8 @@ export class PostService {
     const post = await this.postRepository.findById(uuid);
     if (!post) throw new PostNotFoundError();
 
-    post.update(data.titulo, data.conteudo, data.autor);
+    // A autoria de um post nunca é alterada via update — apenas título e conteúdo.
+    post.update(data.titulo, data.conteudo);
     return this.postRepository.update(post);
   }
 

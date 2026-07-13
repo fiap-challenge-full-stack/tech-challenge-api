@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { postRouter } from './posts/postRoutes';
 import { authRouter } from './auth/authRoutes';
+import { usuarioRouter } from './auth/usuarioRoutes';
 import metricsRouter from './metrics/metricsRoutes';
 import { testModeMiddleware } from './shared/testModeMiddleware';
 import { testCleanupRouter } from './shared/testCleanupRoutes';
@@ -46,6 +47,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/usuarios', usuarioRouter);
 app.use('/posts', postRouter);
 app.use('/metrics', metricsRouter);
 app.use('/test', testCleanupRouter);
