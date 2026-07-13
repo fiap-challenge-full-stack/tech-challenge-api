@@ -9,7 +9,13 @@ export enum CodigoErro {
   // Erros de Autorização
   AUTHZ_PERMISSAO_INSUFICIENTE = 'AUTHZ_001',
   AUTHZ_NAO_AUTENTICADO = 'AUTHZ_002',
-  
+
+  // Erros de Usuários
+  USUARIO_NAO_ENCONTRADO = 'USR_001',
+  USUARIO_EMAIL_EM_USO = 'USR_002',
+  USUARIO_ULTIMO_ADMIN = 'USR_003',
+  USUARIO_OPERACAO_NAO_PERMITIDA = 'USR_004',
+
   // Erros de Posts
   POST_NAO_ENCONTRADO = 'POST_001',
   POST_TITULO_INVALIDO = 'POST_002',
@@ -60,6 +66,10 @@ export const mensagensErro: Record<CodigoErro, string> = {
   [CodigoErro.AUTH_USUARIO_JA_EXISTE]: 'Usuário já existe',
   [CodigoErro.AUTHZ_PERMISSAO_INSUFICIENTE]: 'Permissão insuficiente',
   [CodigoErro.AUTHZ_NAO_AUTENTICADO]: 'Usuário não autenticado',
+  [CodigoErro.USUARIO_NAO_ENCONTRADO]: 'Usuário não encontrado',
+  [CodigoErro.USUARIO_EMAIL_EM_USO]: 'Email já está em uso por outro usuário',
+  [CodigoErro.USUARIO_ULTIMO_ADMIN]: 'Não é possível remover o último administrador do sistema',
+  [CodigoErro.USUARIO_OPERACAO_NAO_PERMITIDA]: 'Operação não permitida para este usuário',
   [CodigoErro.POST_NAO_ENCONTRADO]: 'Post não encontrado',
   [CodigoErro.POST_TITULO_INVALIDO]: 'Título inválido',
   [CodigoErro.POST_CONTEUDO_INVALIDO]: 'Conteúdo inválido',

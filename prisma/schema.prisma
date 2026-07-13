@@ -20,6 +20,7 @@ model Usuario {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([papel])
   @@map("usuarios")
 }
 

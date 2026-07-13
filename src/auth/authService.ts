@@ -41,12 +41,15 @@ export class AuthService {
     }
 
     const senhaHash = await bcrypt.hash(data.senha, 10);
-    
+
+    // Registro público sempre cria usuários com o papel padrão 'docente'.
+    // O campo `papel` nunca é aceito do cliente neste fluxo (API-02) —
+    // promoções a 'admin' só podem ser feitas via POST /usuarios por um admin.
     const usuario = await this.usuarioRepository.create({
       email: data.email,
       senha: senhaHash,
       nome: data.nome,
-      papel: data.papel
+      papel: 'docente'
     });
 
     const token = this.gerarToken(usuario);
@@ -83,10 +86,10 @@ export class AuthService {
     } as jwt.SignOptions);
   }
 
-  verificarToken(token: string): any {
+  verificarToken(token: string): string | jwt.JwtPayload {
     try {
       return jwt.verify(token, this.JWT_SECRET);
-    } catch (error) {
+    } catch {
       throw new InvalidCredentialsError();
     }
   }

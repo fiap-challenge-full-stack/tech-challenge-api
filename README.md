@@ -156,8 +156,15 @@ Pipeline automatizado:
 ## 📊 Endpoints Principais
 
 ### Autenticação
-- `POST /auth/registrar` - Registro de usuário
+- `POST /auth/registrar` - Registro de usuário (papel sempre forçado para `docente` no servidor; o campo `papel` enviado pelo cliente é ignorado)
 - `POST /auth/login` - Login com JWT
+
+### Usuários (JWT required)
+- `GET /usuarios` - Listar usuários paginados, com filtro por `papel` (somente admin)
+- `POST /usuarios` - Criar usuário com papel arbitrário (somente admin)
+- `GET /usuarios/:uuid` - Consultar usuário (admin consulta qualquer um; usuário comum só a si próprio)
+- `PUT /usuarios/:uuid` / `PATCH /usuarios/:uuid` - Atualizar usuário (somente admin pode alterar `papel`; usuário comum só edita a si próprio)
+- `DELETE /usuarios/:uuid` - Remover usuário (admin remove qualquer um; usuário comum pode autodeletar sua conta; o último admin do sistema não pode ser removido)
 
 ### Health
 - `GET /health` - Health check da API
@@ -166,8 +173,8 @@ Pipeline automatizado:
 - `GET /posts` - Listar todos os posts
 - `GET /posts/:id` - Buscar post por ID
 - `GET /posts/search?q=...` - Buscar posts por palavra-chave
-- `POST /posts` - Criar novo post (JWT required)
-- `PUT /posts/:id` - Atualizar post (JWT required)
+- `POST /posts` - Criar novo post (JWT required; autor sempre derivado da sessão autenticada, campo `autor` do corpo é ignorado)
+- `PUT /posts/:id` - Atualizar post (JWT required; título/conteúdo apenas, autoria não é alterável)
 - `DELETE /posts/:id` - Deletar post (JWT required)
 
 ## 🔗 Links
