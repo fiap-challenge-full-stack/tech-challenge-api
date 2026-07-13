@@ -5,7 +5,7 @@ import { ZodError } from 'zod';
 import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
 import { createSpan } from '../observability/tracing';
-import { ITestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
+import { getTestUuids, ITestModeRequest, registerTestUuid } from '../shared/testModeMiddleware';
 
 export class PostController {
   constructor(private readonly postService: PostService) {}
@@ -98,9 +98,9 @@ export class PostController {
 
         for (let i = 0; i < quantidade; i++) {
           const postData = {
-            title: `Post de Teste ${Date.now()}-${i}`,
-            content: `Conteúdo de teste para post ${i}. Lorem ipsum dolor sit amet.`,
-            author: `Autor Teste ${i}`
+            titulo: `Post de Teste ${Date.now()}-${i}`,
+            conteudo: `Conteúdo de teste para post ${i}. Lorem ipsum dolor sit amet.`,
+            autor: `Autor Teste ${i}`
           };
 
           const post = await this.postService.create(postData);
@@ -145,7 +145,7 @@ export class PostController {
 
         // Limpar posts criados durante a sessão de teste
         if (req.testSessionId) {
-          const testUuids = req.testUuids || [];
+          const testUuids = getTestUuids(req.testSessionId);
           for (const uuid of testUuids) {
             try {
               await this.postService.delete(uuid);

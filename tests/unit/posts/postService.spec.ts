@@ -20,8 +20,8 @@ describe('PostService', () => {
 
   describe('create', () => {
     it('should create a new post using the repository', async () => {
-      const postData = { title: 'Test', content: 'Content', author: 'Author' };
-      const createdPost = Post.create(postData.title, postData.content, postData.author);
+      const postData = { titulo: 'Test', conteudo: 'Content', autor: 'Author' };
+      const createdPost = Post.create(postData.titulo, postData.conteudo, postData.autor);
       mockPostRepository.create.mockResolvedValue(createdPost);
 
       const result = await postService.create(postData);
@@ -79,7 +79,7 @@ describe('PostService', () => {
       mockPostRepository.findById.mockResolvedValue(existingPost);
       mockPostRepository.update.mockResolvedValue(existingPost);
 
-      const updateData = { title: 'New' };
+      const updateData = { titulo: 'New' };
       const result = await postService.update('uuid-1', updateData);
 
       expect(mockPostRepository.findById).toHaveBeenCalledWith('uuid-1');
@@ -90,7 +90,7 @@ describe('PostService', () => {
 
     it('should throw PostNotFoundError if post not found', async () => {
       mockPostRepository.findById.mockResolvedValue(null);
-      await expect(postService.update('uuid-1', { title: 'New' })).rejects.toThrow(PostNotFoundError);
+      await expect(postService.update('uuid-1', { titulo: 'New' })).rejects.toThrow(PostNotFoundError);
     });
   });
 

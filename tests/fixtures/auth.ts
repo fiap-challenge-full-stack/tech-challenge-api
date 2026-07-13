@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 
 const prisma = new PrismaClient();
 
-export interface AuthFixtureResult {
+export interface IAuthFixtureResult {
   token: string;
   usuario: {
     uuid: string;
@@ -15,7 +15,7 @@ export interface AuthFixtureResult {
   };
 }
 
-export async function criarTokenDeTeste(papel: 'docente' | 'admin' = 'docente'): Promise<AuthFixtureResult> {
+export async function criarTokenDeTeste(papel: 'docente' | 'admin' = 'docente'): Promise<IAuthFixtureResult> {
   const timestamp = Date.now();
   const email = `test-${timestamp}@test.com`;
   const senha = 'senha123';

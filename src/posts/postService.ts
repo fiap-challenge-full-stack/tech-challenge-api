@@ -13,14 +13,7 @@ export class PostService {
   constructor(private readonly postRepository: IPostRepository) {}
 
   async create(data: CreatePostInput): Promise<Post> {
-    // Mapear campos em português para inglês
-    const createData = {
-      title: (data as any).titulo || data.title,
-      content: (data as any).conteudo || data.content,
-      author: (data as any).autor || data.author,
-    };
-    
-    const post = Post.create(createData.title, createData.content, createData.author);
+    const post = Post.create(data.titulo, data.conteudo, data.autor);
     return this.postRepository.create(post);
   }
 
@@ -39,15 +32,8 @@ export class PostService {
   async update(uuid: string, data: UpdatePostInput): Promise<Post> {
     const post = await this.postRepository.findById(uuid);
     if (!post) throw new PostNotFoundError();
-    
-    // Mapear campos em português para inglês
-    const updateData = {
-      title: (data as any).titulo || data.title,
-      content: (data as any).conteudo || data.content,
-      author: (data as any).autor || data.author,
-    };
-    
-    post.update(updateData.title, updateData.content, updateData.author);
+
+    post.update(data.titulo, data.conteudo, data.autor);
     return this.postRepository.update(post);
   }
 
