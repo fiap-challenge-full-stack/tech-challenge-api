@@ -12,6 +12,7 @@ export default [
   {
     rules: {
       "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "no-console": "off",
       "@typescript-eslint/naming-convention": [
         "error",
