@@ -9,18 +9,19 @@ async function main() {
   await prisma.post.deleteMany({});
   await prisma.usuario.deleteMany({});
 
-  console.log('Iniciando seed de 20 usuários...');
+  console.log('Iniciando seed de 30 usuários...');
   const senhaHash = await bcrypt.hash('senha123', 10);
 
   const rawUsers = [
-    // 4 Docentes
+    // Docentes (5)
     { nome: 'Professor João Silva', email: 'docente1@fiap.com.br', papel: 'docente' },
     { nome: 'Professora Maria Santos', email: 'docente2@fiap.com.br', papel: 'docente' },
     { nome: 'Professor Ricardo Melo', email: 'ricardo.melo@fiap.com.br', papel: 'docente' },
     { nome: 'Professora Ana Clara', email: 'anaclara@fiap.com.br', papel: 'docente' },
-    // 1 Admin
+    { nome: 'Professor André Santos', email: 'andre.santos@fiap.com.br', papel: 'docente' },
+    // Admin (1)
     { nome: 'Administrador', email: 'admin@fiap.com.br', papel: 'admin' },
-    // 15 Alunos
+    // Alunos (24)
     { nome: 'Lucas Lima', email: 'lucas.lima@fiap.com.br', papel: 'aluno' },
     { nome: 'Ana Souza', email: 'ana.souza@fiap.com.br', papel: 'aluno' },
     { nome: 'Carlos Oliveira', email: 'carlos.oliveira@fiap.com.br', papel: 'aluno' },
@@ -35,7 +36,16 @@ async function main() {
     { nome: 'Mariana Silva', email: 'mariana.silva@fiap.com.br', papel: 'aluno' },
     { nome: 'Rodrigo Santos', email: 'rodrigo.santos@fiap.com.br', papel: 'aluno' },
     { nome: 'Amanda Cruz', email: 'amanda.cruz@fiap.com.br', papel: 'aluno' },
-    { nome: 'Daniel Ribeiro', email: 'daniel.ribeiro@fiap.com.br', papel: 'aluno' }
+    { nome: 'Daniel Ribeiro', email: 'daniel.ribeiro@fiap.com.br', papel: 'aluno' },
+    { nome: 'Patricia Neves', email: 'patricia.neves@fiap.com.br', papel: 'aluno' },
+    { nome: 'Gabriel Fernandes', email: 'gabriel.fernandes@fiap.com.br', papel: 'aluno' },
+    { nome: 'Aline Vieira', email: 'aline.vieira@fiap.com.br', papel: 'aluno' },
+    { nome: 'Pedro Souza', email: 'pedro.souza@fiap.com.br', papel: 'aluno' },
+    { nome: 'Sofia Cardoso', email: 'sofia.cardoso@fiap.com.br', papel: 'aluno' },
+    { nome: 'Bruno Barbosa', email: 'bruno.barbosa@fiap.com.br', papel: 'aluno' },
+    { nome: 'Leticia Ramos', email: 'leticia.ramos@fiap.com.br', papel: 'aluno' },
+    { nome: 'Vitor Castro', email: 'vitor.castro@fiap.com.br', papel: 'aluno' },
+    { nome: 'Clara Pinheiro', email: 'clara.pinheiro@fiap.com.br', papel: 'aluno' }
   ];
 
   const usuarios: any[] = [];
@@ -51,7 +61,7 @@ async function main() {
     usuarios.push(user);
   }
 
-  console.log('20 usuários criados com sucesso.');
+  console.log('30 usuários criados com sucesso.');
 
   console.log('Iniciando seed de posts...');
   const postsData = [
@@ -92,9 +102,25 @@ async function main() {
   console.log(`${posts.length} posts criados com sucesso!`);
 
   console.log('Iniciando seed de comentários...');
-  // Para cada post, vamos gerar comentários interativos
-  // incluindo o próprio autor do post respondendo, o usuário logado padrão (docente1@fiap.com.br / Professor João Silva)
-  // e outros alunos de forma a demonstrar o layout diferenciado.
+  
+  const commentTexts = [
+    "Excelente reflexão sobre o assunto!",
+    "Muito bom! Essa parte de arquitetura sempre me confunde um pouco.",
+    "Obrigado por compartilhar o conhecimento, ajudou demais.",
+    "Excelente didática, professor(a)!",
+    "Teremos algum projeto prático aplicando este conceito?",
+    "Gostei muito dos exemplos utilizados no texto.",
+    "Parabéns pelo post! Recomendei para outros colegas da turma.",
+    "Esse conteúdo vai cair na avaliação desta semana?",
+    "Interessante como a performance muda dependendo da abordagem.",
+    "Achei o tema de extrema relevância para a atualidade.",
+    "Como podemos aprofundar esse estudo além do artigo?",
+    "O código fonte desse exemplo está disponível no GitHub?",
+    "Muito interessante ver esse ponto de vista sobre o tema.",
+    "Excelente texto. Adicionei aos meus favoritos.",
+    "Sensacional! Ficou super claro a explicação."
+  ];
+
   for (const post of posts) {
     const postAuthor = post.author;
     const postUuid = post.uuid;
@@ -103,36 +129,41 @@ async function main() {
     const authorUser = usuarios.find(u => u.nome === postAuthor) || usuarios[0];
     // Pegar o usuario logado padrao (Professor João Silva)
     const loggedInUser = usuarios.find(u => u.email === 'docente1@fiap.com.br') || usuarios[1];
-    // Selecionar alguns alunos aleatórios
-    const aluno1 = usuarios.find(u => u.email === 'lucas.lima@fiap.com.br') || usuarios[5];
-    const aluno2 = usuarios.find(u => u.email === 'ana.souza@fiap.com.br') || usuarios[6];
 
-    const commentsToCreate = [
-      {
-        postUuid,
-        autorUuid: aluno1.uuid,
-        autorNome: aluno1.nome,
-        conteudo: `Excelente artigo! Tirou várias das minhas dúvidas sobre ${post.title}.`
-      },
-      {
-        postUuid,
-        autorUuid: authorUser.uuid,
-        autorNome: authorUser.nome,
-        conteudo: `Muito obrigado, ${aluno1.nome.split(' ')[0]}! Fico feliz que o conteúdo tenha ajudado.`
-      },
-      {
+    // Número aleatório entre 5 e 15 comentários
+    const numComments = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
+    const commentsToCreate: any[] = [];
+
+    // 1. Sempre garantir o comentário do autor do post
+    commentsToCreate.push({
+      postUuid,
+      autorUuid: authorUser.uuid,
+      autorNome: authorUser.nome,
+      conteudo: `Obrigado a todos pelo interesse e comentários neste post sobre ${post.title}!`
+    });
+
+    // 2. Sempre garantir o comentário do usuário logado padrão
+    if (authorUser.uuid !== loggedInUser.uuid) {
+      commentsToCreate.push({
         postUuid,
         autorUuid: loggedInUser.uuid,
         autorNome: loggedInUser.nome,
-        conteudo: `Parabéns pela publicação! Este tópico sobre ${post.title} é fundamental na formação deles.`
-      },
-      {
+        conteudo: `Excelente contribuição para a comunidade! ${post.title} é fundamental.`
+      });
+    }
+
+    // 3. Completar com comentários de usuários aleatórios até atingir numComments
+    while (commentsToCreate.length < numComments) {
+      const randomUser = usuarios[Math.floor(Math.random() * usuarios.length)];
+      const randomText = commentTexts[Math.floor(Math.random() * commentTexts.length)];
+      
+      commentsToCreate.push({
         postUuid,
-        autorUuid: aluno2.uuid,
-        autorNome: aluno2.nome,
-        conteudo: `Obrigada pela contribuição! Teremos aulas práticas sobre isso em breve?`
-      }
-    ];
+        autorUuid: randomUser.uuid,
+        autorNome: randomUser.nome,
+        conteudo: randomText
+      });
+    }
 
     for (const c of commentsToCreate) {
       await prisma.comentario.create({
