@@ -101,8 +101,5 @@ para viabilizar os testes; os únicos ajustes realizados foram na preparação
 do ambiente local (aplicação de migrations, seed e limpeza de dados
 residuais de testes anteriores via API), descritos em `usuarios.md`.
 
-A única divergência encontrada não é um bug de comportamento, mas uma
-desatualização de documentação: `docs/openapi.yaml` descreve
-`PUT /posts/{id}` com campos `title`/`content`, enquanto a implementação
-real usa `PATCH /posts/{uuid}` com campos `titulo`/`conteudo` (ver detalhes
-em `posts.md`).
+A implementação real de atualização de post usa `PATCH /posts/{uuid}` com
+campos `titulo`/`conteudo` (ver detalhes em `posts.md`).

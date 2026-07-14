@@ -7,10 +7,8 @@ requisição. Script: [`scripts/posts.sh`](./scripts/posts.sh).
 
 Tokens JWT completos foram substituídos por `<jwt-token>`.
 
-> Nota de contrato: a implementação real usa `PATCH /posts/{uuid}` (não
-> `PUT`) para atualização, e os campos de entrada são `titulo`/`conteudo`
-> (não `title`/`content` como consta em `docs/openapi.yaml`). Os cenários
-> abaixo seguem o comportamento real da API, confirmado em
+> Nota de contrato: a atualização de post usa `PATCH /posts/{uuid}` (não
+> `PUT`), com campos de entrada `titulo`/`conteudo`, confirmado em
 > `src/posts/postRoutes.ts` e `src/posts/postSchemas.ts`.
 
 ---
@@ -226,9 +224,5 @@ STATUS: 400
 | Criar sem conteúdo | Validação | 400 | 400 | ✅ |
 | Atualizar com corpo vazio | Validação | 400 | 400 | ✅ |
 
-Nenhum comportamento inesperado foi encontrado neste domínio. A única
-divergência observada foi de documentação: `docs/openapi.yaml` descreve o
-método `PUT /posts/{id}` e os campos `title`/`content`, enquanto a
-implementação real usa `PATCH /posts/{uuid}` e os campos `titulo`/`conteudo`.
-Nenhuma alteração de código foi feita — a divergência é reportada aqui para
-que o time avalie atualizar o `openapi.yaml`.
+Nenhum comportamento inesperado foi encontrado neste domínio. A atualização
+de post usa `PATCH /posts/{uuid}` com os campos `titulo`/`conteudo`.
