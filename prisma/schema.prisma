@@ -33,6 +33,7 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([createdAt])
   @@map("posts")
 }
 
