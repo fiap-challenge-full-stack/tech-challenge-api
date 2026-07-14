@@ -109,9 +109,11 @@ export class PostController {
         const postsCriados = [];
 
         for (let i = 0; i < quantidade; i++) {
+          const assuntos = ['React Native', 'Arquitetura', 'UI/UX', 'Performance', 'Testes E2E'];
+          const assunto = assuntos[i % assuntos.length];
           const postData = {
-            titulo: `Post de Teste ${Date.now()}-${i}`,
-            conteudo: `Conteúdo de teste para post ${i}. Lorem ipsum dolor sit amet.`,
+            titulo: `Melhores Práticas: ${assunto} na Prática`,
+            conteudo: `Este post explora as melhores estratégias e ferramentas para trabalhar com ${assunto}. Desde os conceitos fundamentais até otimizações avançadas, confira dicas valiosas para aprimorar seu projeto.`,
           };
 
           const post = await this.postService.create(postData, `Autor Teste ${i}`);
