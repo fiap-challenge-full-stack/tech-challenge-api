@@ -15,7 +15,7 @@ export interface IAuthFixtureResult {
   };
 }
 
-export async function criarTokenDeTeste(papel: 'docente' | 'admin' = 'docente'): Promise<IAuthFixtureResult> {
+export async function criarTokenDeTeste(papel: 'docente' | 'admin' | 'aluno' = 'docente'): Promise<IAuthFixtureResult> {
   const timestamp = Date.now();
   const email = `test-${timestamp}@test.com`;
   const senha = 'senha123';

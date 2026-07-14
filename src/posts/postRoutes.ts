@@ -3,6 +3,7 @@ import { PostController } from './postController';
 import { PostService } from './postService';
 import { NativeSqlPostRepository } from './nativeSqlPostRepository';
 import { autenticar, autorizar } from '../auth/authMiddleware';
+import { postComentarioRouter } from '../comentarios/comentarioRoutes';
 
 const postRouter = Router();
 
@@ -15,6 +16,9 @@ const controller = new PostController(service);
 postRouter.get('/', (req, res) => controller.list(req, res));
 postRouter.get('/search', (req, res) => controller.search(req, res));
 postRouter.get('/:uuid', (req, res) => controller.getById(req, res));
+
+// Comentários de um post (leitura pública, criação autenticada)
+postRouter.use('/:postUuid/comentarios', postComentarioRouter);
 
 // Rotas de teste (apenas em modo de teste)
 postRouter.post('/seed', (req, res) => controller.seed(req, res));

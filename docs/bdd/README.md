@@ -40,6 +40,19 @@ bdd/
 │       ├── sucesso.md
 │       ├── falha.md
 │       └── validacao.md
+├── comentarios/                   # Domínio de Comentários
+│   ├── criacao/                   # Funcionalidade de Criação
+│   │   ├── sucesso.md
+│   │   ├── falha.md
+│   │   └── validacao.md
+│   ├── leitura/                   # Funcionalidade de Leitura
+│   │   ├── sucesso.md
+│   │   ├── falha.md
+│   │   └── validacao.md
+│   └── exclusao/                  # Funcionalidade de Exclusão
+│       ├── sucesso.md
+│       ├── falha.md
+│       └── validacao.md
 └── monitoramento/                 # Domínio de Monitoramento
     ├── health/                    # Funcionalidade de Health Check
     │   ├── sucesso.md
