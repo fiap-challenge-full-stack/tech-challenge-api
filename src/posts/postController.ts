@@ -14,7 +14,6 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   private isValidUuid(uuid: string): boolean {
-    // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
@@ -64,19 +63,22 @@ export class PostController {
           });
         }
 
-        const validatedData = createPostSchema.parse(req.body);
-        // Autoria sempre derivada da sessão autenticada (API-06) — qualquer
-        // campo `autor` enviado no corpo é ignorado.
+        const body = { ...req.body };
+        if (body.title && !body.titulo) body.titulo = body.title;
+        if (body.content && !body.conteudo) body.conteudo = body.content;
+
+        const validatedData = createPostSchema.parse(body);
         const post = await this.postService.create(validatedData, req.usuario.nome);
 
-        // Registrar UUID em modo de teste
         if (req.isTestMode && req.testSessionId && post.uuid) {
           registerTestUuid(req.testSessionId, post.uuid);
         }
         
-        // Retornar apenas campos públicos
         const postPublico = {
           uuid: post.uuid,
+          title: post.title,
+          content: post.content,
+          author: post.author,
           titulo: post.title,
           conteudo: post.content,
           autor: post.author,
@@ -86,7 +88,8 @@ export class PostController {
         
         return res.status(201).json({
           sucesso: true,
-          dados: postPublico
+          dados: postPublico,
+          ...postPublico
         });
       } catch (error) {
         return this.handleError(error, res);
@@ -97,7 +100,6 @@ export class PostController {
   async seed(req: ITestModeRequest, res: Response): Promise<Response> {
     return createSpan('post.seed', async () => {
       try {
-        // Apenas permitir em modo de teste
         if (!req.isTestMode) {
           return res.status(403).json({
             sucesso: false,
@@ -124,6 +126,9 @@ export class PostController {
 
           postsCriados.push({
             uuid: post.uuid,
+            title: post.title,
+            content: post.content,
+            author: post.author,
             titulo: post.title,
             conteudo: post.content,
             autor: post.author,
@@ -148,7 +153,6 @@ export class PostController {
   async cleanup(req: ITestModeRequest, res: Response): Promise<Response> {
     return createSpan('post.cleanup', async () => {
       try {
-        // Apenas permitir em modo de teste
         if (!req.isTestMode) {
           return res.status(403).json({
             sucesso: false,
@@ -156,14 +160,12 @@ export class PostController {
           });
         }
 
-        // Limpar posts criados durante a sessão de teste
         if (req.testSessionId) {
           const testUuids = getTestUuids(req.testSessionId);
           for (const uuid of testUuids) {
             try {
               await this.postService.delete(uuid);
             } catch (error) {
-              // Ignorar erros ao deletar posts que podem não existir
               console.log(`Erro ao deletar post ${uuid}:`, error);
             }
           }
@@ -186,9 +188,11 @@ export class PostController {
       try {
         const posts = await this.postService.listAll();
         
-        // Converter para formato público (sem ID interno)
         const postsPublicos = posts.map(post => ({
           uuid: post.uuid,
+          title: post.title,
+          content: post.content,
+          author: post.author,
           titulo: post.title,
           conteudo: post.content,
           autor: post.author,
@@ -211,7 +215,6 @@ export class PostController {
       try {
         const { uuid } = req.params;
         
-        // Validar que o ID é um UUID válido
         if (!uuid || !this.isValidUuid(uuid as string)) {
           return res.status(400).json({ 
             codigo: CodigoErro.VALIDACAO_CAMPO_INVALIDO,
@@ -222,9 +225,11 @@ export class PostController {
         const post = await this.postService.findByUuid(uuid as string);
         if (!post) throw new PostNotFoundError();
         
-        // Retornar apenas campos públicos (sem ID interno)
         const postPublico = {
           uuid: post.uuid,
+          title: post.title,
+          content: post.content,
+          author: post.author,
           titulo: post.title,
           conteudo: post.content,
           autor: post.author,
@@ -234,7 +239,8 @@ export class PostController {
         
         return res.status(200).json({
           sucesso: true,
-          dados: postPublico
+          dados: postPublico,
+          ...postPublico
         });
       } catch (error) {
         return this.handleError(error, res);
@@ -250,6 +256,9 @@ export class PostController {
 
         const postsPublicos = posts.map(post => ({
           uuid: post.uuid,
+          title: post.title,
+          content: post.content,
+          author: post.author,
           titulo: post.title,
           conteudo: post.content,
           autor: post.author,
@@ -271,12 +280,19 @@ export class PostController {
     return createSpan('post.update', async () => {
       try {
         const { uuid } = req.params;
-        const validatedData = updatePostSchema.parse(req.body);
+
+        const body = { ...req.body };
+        if (body.title && !body.titulo) body.titulo = body.title;
+        if (body.content && !body.conteudo) body.conteudo = body.content;
+
+        const validatedData = updatePostSchema.parse(body);
         const post = await this.postService.update(uuid as string, validatedData);
         
-        // Retornar apenas campos públicos
         const postPublico = {
           uuid: post.uuid,
+          title: post.title,
+          content: post.content,
+          author: post.author,
           titulo: post.title,
           conteudo: post.content,
           autor: post.author,
@@ -286,7 +302,8 @@ export class PostController {
         
         return res.status(200).json({
           sucesso: true,
-          dados: postPublico
+          dados: postPublico,
+          ...postPublico
         });
       } catch (error) {
         return this.handleError(error, res);
