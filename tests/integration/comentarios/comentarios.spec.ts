@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '@/app';
 import { db } from '@/lib/db';
 import { criarTokenDeTeste, limparUsuariosDeTeste } from '@/tests/fixtures/auth';
+import { dbTransactionHelper } from '@/tests/helpers/dbTransactionHelper';
 
 describe('Comentarios API Integration Tests', () => {
   let autorToken: string;
@@ -9,6 +10,7 @@ describe('Comentarios API Integration Tests', () => {
   let postUuid: string;
 
   beforeAll(async () => {
+    await dbTransactionHelper.start();
     const autor = await criarTokenDeTeste('docente');
     autorToken = autor.token;
     const aluno = await criarTokenDeTeste('aluno');
@@ -25,6 +27,7 @@ describe('Comentarios API Integration Tests', () => {
   });
 
   afterAll(async () => {
+    await dbTransactionHelper.rollback();
     if (postUuid) {
       await request(app)
         .delete(`/posts/${postUuid}`)

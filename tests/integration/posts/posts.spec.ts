@@ -2,16 +2,19 @@ import request from 'supertest';
 import app from '@/app';
 import { db } from '@/lib/db';
 import { criarTokenDeTeste, limparUsuariosDeTeste } from '@/tests/fixtures/auth';
+import { dbTransactionHelper } from '@/tests/helpers/dbTransactionHelper';
 
 describe('Posts API Integration Tests', () => {
   let authToken: string;
 
   beforeAll(async () => {
+    await dbTransactionHelper.start();
     const authFixture = await criarTokenDeTeste('docente');
     authToken = authFixture.token;
   });
 
   afterAll(async () => {
+    await dbTransactionHelper.rollback();
     await limparUsuariosDeTeste();
     await db.end();
   });
