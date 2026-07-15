@@ -1,14 +1,8 @@
 import { Router } from 'express';
-import { ComentarioController } from './comentarioController';
-import { ComentarioService } from './comentarioService';
-import { NativeSqlComentarioRepository } from './nativeSqlComentarioRepository';
-import { NativeSqlPostRepository } from '../posts/nativeSqlPostRepository';
 import { autenticar } from '../auth/authMiddleware';
+import { container } from '../shared/container';
 
-const comentarioRepository = new NativeSqlComentarioRepository();
-const postRepository = new NativeSqlPostRepository();
-const comentarioService = new ComentarioService(comentarioRepository, postRepository);
-const comentarioController = new ComentarioController(comentarioService);
+const comentarioController = container.comentarios.controller;
 
 // Comentários de um post: leitura pública, criação exige apenas autenticação
 // (qualquer papel pode comentar).

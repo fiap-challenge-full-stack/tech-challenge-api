@@ -27,13 +27,17 @@ export class Usuario {
     this.updatedAt = props.updatedAt;
   }
 
-  static create(email: string, senha: string, nome: string, papel: string = 'docente'): Omit<IUsuarioProps, 'uuid' | 'createdAt' | 'updatedAt'> {
-    return {
+  static create(email: string, senha: string, nome: string, papel: string = 'docente'): Usuario {
+    const now = new Date();
+    return new Usuario({
+      uuid: '',
       email,
       senha,
       nome,
-      papel
-    };
+      papel,
+      createdAt: now,
+      updatedAt: now
+    });
   }
 
   toJSON() {

@@ -9,7 +9,7 @@ import {
 export class MemoryUsuarioRepository implements IUsuarioRepository {
   private usuarios: Map<string, Usuario> = new Map();
 
-  async create(usuario: Omit<Usuario, 'uuid' | 'createdAt' | 'updatedAt'>): Promise<Usuario> {
+  async create(usuario: Usuario): Promise<Usuario> {
     const uuid = crypto.randomUUID();
     const now = new Date();
 

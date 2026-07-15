@@ -45,12 +45,8 @@ export class AuthService {
     // Registro público sempre cria usuários com o papel padrão 'docente'.
     // O campo `papel` nunca é aceito do cliente neste fluxo (API-02) —
     // promoções a 'admin' só podem ser feitas via POST /usuarios por um admin.
-    const usuario = await this.usuarioRepository.create({
-      email: data.email,
-      senha: senhaHash,
-      nome: data.nome,
-      papel: 'docente'
-    });
+    const usuarioEntidade = Usuario.create(data.email, senhaHash, data.nome, 'docente');
+    const usuario = await this.usuarioRepository.create(usuarioEntidade);
 
     const token = this.gerarToken(usuario);
 

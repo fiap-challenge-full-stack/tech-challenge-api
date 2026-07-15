@@ -32,7 +32,7 @@ function toDomain(row: UsuarioRow): Usuario {
 export class PrismaUsuarioRepository implements IUsuarioRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(usuario: { email: string; senha: string; nome: string; papel: string }): Promise<Usuario> {
+  async create(usuario: Usuario): Promise<Usuario> {
     const novoUsuario = await this.prisma.usuario.create({
       data: {
         email: usuario.email,

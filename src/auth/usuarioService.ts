@@ -62,13 +62,9 @@ export class UsuarioService {
     }
 
     const senhaHash = await bcrypt.hash(data.senha, 10);
+    const usuarioEntidade = Usuario.create(data.email, senhaHash, data.nome, data.papel);
 
-    return this.usuarioRepository.create({
-      email: data.email,
-      senha: senhaHash,
-      nome: data.nome,
-      papel: data.papel,
-    });
+    return this.usuarioRepository.create(usuarioEntidade);
   }
 
   async atualizar(uuid: string, data: UpdateUsuarioInput, requisitante: IRequisitante): Promise<Usuario> {
