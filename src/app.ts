@@ -37,11 +37,13 @@ app.use(cors({
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
-app.use(testModeMiddleware);
+if (process.env.NODE_ENV !== 'production') {
+  app.use(testModeMiddleware);
+}
 
 // Aplicar rate limiting
-app.use('/api/', apiLimiter)
-app.use('/api/auth', authLimiter)
+app.use('/auth', authLimiter);
+app.use('/', apiLimiter);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -52,7 +54,10 @@ app.use('/usuarios', usuarioRouter);
 app.use('/posts', postRouter);
 app.use('/comentarios', comentarioRouter);
 app.use('/metrics', metricsRouter);
-app.use('/test', testCleanupRouter);
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/test', testCleanupRouter);
+}
 
 // Tratador de erro global (deve ser o último middleware)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

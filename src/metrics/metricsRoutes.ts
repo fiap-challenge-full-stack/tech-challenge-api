@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { MetricsController } from './metricsController';
+import { metricsAuth } from '../middleware/metricsAuth';
 
 const metricsRouter = Router();
+metricsRouter.use(metricsAuth);
+
 const metricsController = new MetricsController();
 
 // GET /metrics - Retorna todas as métricas em formato Prometheus

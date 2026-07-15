@@ -21,8 +21,10 @@ postRouter.get('/:uuid', (req, res) => controller.getById(req, res));
 postRouter.use('/:postUuid/comentarios', postComentarioRouter);
 
 // Rotas de teste (apenas em modo de teste)
-postRouter.post('/seed', (req, res) => controller.seed(req, res));
-postRouter.delete('/cleanup', (req, res) => controller.cleanup(req, res));
+if (process.env.NODE_ENV !== 'production') {
+  postRouter.post('/seed', (req, res) => controller.seed(req, res));
+  postRouter.delete('/cleanup', (req, res) => controller.cleanup(req, res));
+}
 
 // Rotas protegidas (escrita) - requer autenticação
 postRouter.post('/', autenticar, autorizar(['docente', 'admin']), (req, res) => controller.create(req, res));
