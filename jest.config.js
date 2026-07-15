@@ -9,6 +9,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['**/*.spec.ts'],
+  testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
   coveragePathIgnorePatterns: ['/node_modules/'],
   setupFiles: ['<rootDir>/tests/setup.ts'],
 };
