@@ -18,17 +18,20 @@ const app = express();
 app.use(helmet());
 app.use(setCSPHeaders);
 
-// Configurar CORS com origens específicas
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://seu-dominio.com']
-  : ['http://localhost:3000', 'http://localhost:3001'];
-
+// Configurar CORS para permitir web frontend, mobile app e ambiente local
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
+    if (
+      !origin ||
+      process.env.NODE_ENV !== 'production' ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin.startsWith('http://192.168.') ||
+      origin.startsWith('exp://')
+    ) {
+      callback(null, true);
     } else {
-      callback(new Error('Não permitido pelo CORS'))
+      callback(new Error('Não permitido pelo CORS'));
     }
   },
   credentials: true
