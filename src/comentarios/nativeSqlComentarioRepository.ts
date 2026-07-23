@@ -29,8 +29,25 @@ export class NativeSqlComentarioRepository implements IComentarioRepository {
     return rows.map((row: IComentarioPersistence) => ComentarioMapper.toDomain(row));
   }
 
-  async delete(uuid: string): Promise<void> {
-    const query = 'DELETE FROM "comentarios" WHERE uuid = $1;';
-    await db.query(query, [uuid]);
+  async update(uuid: string, conteudo: string): Promise<Comentario> {
+    const query = `
+      UPDATE "comentarios"
+      SET conteudo = $2, "updatedAt" = now()
+      WHERE uuid = $1
+      RETURNING *;
+    `;
+    const { rows } = await db.query(query, [uuid, conteudo]);
+    return ComentarioMapper.toDomain(rows[0] as IComentarioPersistence);
+  }
+
+  async softDelete(uuid: string): Promise<Comentario> {
+    const query = `
+      UPDATE "comentarios"
+      SET conteudo = '', apagado = true, "apagadoEm" = now(), "updatedAt" = now()
+      WHERE uuid = $1
+      RETURNING *;
+    `;
+    const { rows } = await db.query(query, [uuid]);
+    return ComentarioMapper.toDomain(rows[0] as IComentarioPersistence);
   }
 }

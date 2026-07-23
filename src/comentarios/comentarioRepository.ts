@@ -4,5 +4,6 @@ export interface IComentarioRepository {
   create(comentario: Comentario): Promise<Comentario>;
   findById(uuid: string): Promise<Comentario | null>;
   findByPostUuid(postUuid: string): Promise<Comentario[]>;
-  delete(uuid: string): Promise<void>;
+  update(uuid: string, conteudo: string): Promise<Comentario>;
+  softDelete(uuid: string): Promise<Comentario>;
 }

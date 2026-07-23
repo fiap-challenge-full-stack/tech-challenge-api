@@ -5,7 +5,7 @@ import {
   PostDoComentarioNotFoundError,
   ComentarioOperacaoNaoPermitidaError,
 } from './comentarioService';
-import { createComentarioSchema } from './comentarioSchemas';
+import { createComentarioSchema, updateComentarioSchema } from './comentarioSchemas';
 import { ZodError } from 'zod';
 import { CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
@@ -17,6 +17,8 @@ function comentarioPublico(comentario: {
   autorUuid: string;
   autorNome: string;
   conteudo: string;
+  apagado: boolean;
+  editado: boolean;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -25,7 +27,9 @@ function comentarioPublico(comentario: {
     postUuid: comentario.postUuid,
     autorUuid: comentario.autorUuid,
     autorNome: comentario.autorNome,
-    conteudo: comentario.conteudo,
+    conteudo: comentario.apagado ? '' : comentario.conteudo,
+    apagado: comentario.apagado,
+    editado: comentario.editado,
     criadoEm: comentario.createdAt,
     atualizadoEm: comentario.updatedAt,
   };
@@ -125,6 +129,35 @@ export class ComentarioController {
       return res.status(200).json({
         sucesso: true,
         dados: comentarios.map(comentarioPublico),
+      });
+    } catch (error) {
+      return this.handleError(error, res);
+    }
+  }
+
+  async update(req: IAuthRequest, res: Response): Promise<Response> {
+    try {
+      if (!req.usuario) {
+        return res.status(401).json({
+          codigo: CodigoErro.AUTHZ_NAO_AUTENTICADO,
+          message: 'Usuário não autenticado',
+        });
+      }
+
+      const uuid = req.params.uuid as string;
+      if (!uuid || !this.isValidUuid(uuid)) {
+        return res.status(400).json({
+          codigo: CodigoErro.VALIDACAO_CAMPO_INVALIDO,
+          message: 'ID do comentário inválido. Deve ser um UUID válido.',
+        });
+      }
+
+      const validatedData = updateComentarioSchema.parse(req.body);
+      const comentario = await this.comentarioService.update(uuid, validatedData, req.usuario);
+
+      return res.status(200).json({
+        sucesso: true,
+        dados: comentarioPublico(comentario),
       });
     } catch (error) {
       return this.handleError(error, res);

@@ -7,3 +7,9 @@ export const createComentarioSchema = z.object({
 });
 
 export type CreateComentarioInput = z.infer<typeof createComentarioSchema>;
+
+export const updateComentarioSchema = z.object({
+  conteudo: z.string().min(3, 'O comentário deve ter pelo menos 3 caracteres').max(1000, 'O comentário deve ter no máximo 1000 caracteres'),
+});
+
+export type UpdateComentarioInput = z.infer<typeof updateComentarioSchema>;

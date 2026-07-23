@@ -7,6 +7,8 @@ export interface IComentarioPersistence {
   autorUuid: string;
   autorNome: string;
   conteudo: string;
+  apagado: boolean;
+  apagadoEm: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +24,8 @@ export class ComentarioMapper {
       raw.conteudo,
       new Date(raw.createdAt),
       new Date(raw.updatedAt),
+      raw.apagado,
+      raw.apagadoEm ? new Date(raw.apagadoEm) : null,
     );
   }
 
@@ -33,6 +37,8 @@ export class ComentarioMapper {
       autorUuid: comentario.autorUuid,
       autorNome: comentario.autorNome,
       conteudo: comentario.conteudo,
+      apagado: comentario.apagado,
+      apagadoEm: comentario.apagadoEm,
       createdAt: comentario.createdAt,
       updatedAt: comentario.updatedAt,
     };

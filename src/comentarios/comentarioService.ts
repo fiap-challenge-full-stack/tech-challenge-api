@@ -1,6 +1,6 @@
 import { Comentario } from './comentario';
 import { IComentarioRepository } from './comentarioRepository';
-import { CreateComentarioInput } from './comentarioSchemas';
+import { CreateComentarioInput, UpdateComentarioInput } from './comentarioSchemas';
 import { IPostRepository } from '../posts/postRepository';
 
 export class ComentarioNotFoundError extends Error {
@@ -51,13 +51,22 @@ export class ComentarioService {
     return this.comentarioRepository.findByPostUuid(postUuid);
   }
 
+  async update(uuid: string, data: UpdateComentarioInput, solicitante: IAutorSessao): Promise<Comentario> {
+    const comentario = await this.comentarioRepository.findById(uuid);
+    if (!comentario || comentario.apagado) throw new ComentarioNotFoundError();
+
+    if (comentario.autorUuid !== solicitante.uuid) throw new ComentarioOperacaoNaoPermitidaError();
+
+    return this.comentarioRepository.update(uuid, data.conteudo);
+  }
+
   async delete(uuid: string, solicitante: IAutorSessao): Promise<void> {
     const comentario = await this.comentarioRepository.findById(uuid);
-    if (!comentario) throw new ComentarioNotFoundError();
+    if (!comentario || comentario.apagado) throw new ComentarioNotFoundError();
 
     const podeExcluir = comentario.autorUuid === solicitante.uuid || solicitante.papel === 'admin';
     if (!podeExcluir) throw new ComentarioOperacaoNaoPermitidaError();
 
-    await this.comentarioRepository.delete(uuid);
+    await this.comentarioRepository.softDelete(uuid);
   }
 }

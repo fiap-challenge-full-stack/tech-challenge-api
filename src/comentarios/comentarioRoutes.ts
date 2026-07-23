@@ -10,9 +10,11 @@ const postComentarioRouter = Router({ mergeParams: true });
 postComentarioRouter.get('/', (req, res) => comentarioController.listByPost(req, res));
 postComentarioRouter.post('/', autenticar, (req, res) => comentarioController.create(req, res));
 
-// Exclusão por uuid do comentário: exige autenticação; a checagem de posse
-// (autor do comentário ou admin) é feita no service.
+// Edição e exclusão (lógica, com placeholder "apagado") por uuid do
+// comentário: exigem autenticação; a checagem de posse é feita no service
+// (edição: somente o autor; exclusão: autor do comentário ou admin).
 const comentarioRouter = Router();
+comentarioRouter.patch('/:uuid', autenticar, (req, res) => comentarioController.update(req, res));
 comentarioRouter.delete('/:uuid', autenticar, (req, res) => comentarioController.delete(req, res));
 
 export { postComentarioRouter, comentarioRouter };

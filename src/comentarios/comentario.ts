@@ -8,6 +8,8 @@ export class Comentario {
     public conteudo: string,
     public readonly createdAt: Date,
     public updatedAt: Date,
+    public apagado: boolean = false,
+    public apagadoEm: Date | null = null,
   ) {
     this.validate();
   }
@@ -22,7 +24,7 @@ export class Comentario {
     if (!this.autorNome || this.autorNome.trim() === '') {
       throw new Error('Author name is required');
     }
-    if (!this.conteudo || this.conteudo.trim() === '') {
+    if (!this.apagado && (!this.conteudo || this.conteudo.trim() === '')) {
       throw new Error('Content is required');
     }
   }
@@ -30,5 +32,9 @@ export class Comentario {
   static create(postUuid: string, autorUuid: string, autorNome: string, conteudo: string): Comentario {
     const now = new Date();
     return new Comentario(null, null, postUuid, autorUuid, autorNome, conteudo, now, now);
+  }
+
+  get editado(): boolean {
+    return !this.apagado && this.updatedAt.getTime() !== this.createdAt.getTime();
   }
 }
