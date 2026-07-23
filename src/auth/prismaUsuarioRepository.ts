@@ -1,4 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+
+type PrismaClientOuTransacao = PrismaClient | Prisma.TransactionClient;
 import { Usuario } from './usuario';
 import {
   IAtualizarUsuarioDados,
@@ -29,8 +31,12 @@ function toDomain(row: UsuarioRow): Usuario {
   });
 }
 
+function ehPrismaClientCompleto(client: PrismaClientOuTransacao): client is PrismaClient {
+  return typeof (client as PrismaClient).$transaction === 'function';
+}
+
 export class PrismaUsuarioRepository implements IUsuarioRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClientOuTransacao) {}
 
   async create(usuario: Usuario): Promise<Usuario> {
     const novoUsuario = await this.prisma.usuario.create({
@@ -70,15 +76,25 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
     const pageSize = options?.pageSize ?? 10;
     const where: Prisma.UsuarioWhereInput = options?.papel ? { papel: options.papel } : {};
 
-    const [usuarios, total] = await this.prisma.$transaction([
-      this.prisma.usuario.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      this.prisma.usuario.count({ where }),
-    ]);
+    const [usuarios, total] = ehPrismaClientCompleto(this.prisma)
+      ? await this.prisma.$transaction([
+          this.prisma.usuario.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+          }),
+          this.prisma.usuario.count({ where }),
+        ])
+      : await Promise.all([
+          this.prisma.usuario.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+          }),
+          this.prisma.usuario.count({ where }),
+        ]);
 
     return {
       usuarios: usuarios.map(toDomain),
@@ -106,5 +122,30 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
 
   async countByPapel(papel: string): Promise<number> {
     return this.prisma.usuario.count({ where: { papel } });
+  }
+
+  // Bloqueia (`FOR UPDATE`) as linhas do papel informado. Só tem efeito real
+  // de bloqueio quando executado dentro de uma transação (`executarEmTransacao`);
+  // fora dela, o Postgres libera o lock assim que a query termina.
+  // `FOR UPDATE` não é permitido com funções de agregação, por isso contamos
+  // os ids retornados em vez de usar `COUNT(*)` na própria query.
+  async countByPapelParaAtualizacao(papel: string): Promise<number> {
+    const rows = await this.prisma.$queryRaw<Array<{ id: number }>>`
+      SELECT id FROM "usuarios" WHERE papel = ${papel} FOR UPDATE
+    `;
+    return rows.length;
+  }
+
+  async executarEmTransacao<T>(fn: (repo: IUsuarioRepository) => Promise<T>): Promise<T> {
+    if (!ehPrismaClientCompleto(this.prisma)) {
+      // Já estamos dentro de uma transação (repositório criado a partir de um
+      // `Prisma.TransactionClient`); apenas reutiliza o repositório atual.
+      return fn(this);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const repositorioTransacional = new PrismaUsuarioRepository(tx);
+      return fn(repositorioTransacional);
+    });
   }
 }

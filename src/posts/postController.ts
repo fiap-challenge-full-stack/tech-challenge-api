@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PostService, PostNotFoundError } from './postService';
+import { PostService, PostNotFoundError, PostOperacaoNaoPermitidaError } from './postService';
 import { createPostSchema, updatePostSchema } from './postSchemas';
 import { ZodError } from 'zod';
 import { ErroAplicacao, CodigoErro, criarErro } from '../shared/erros';
@@ -31,9 +31,16 @@ export class PostController {
     }
 
     if (error instanceof PostNotFoundError) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         codigo: CodigoErro.POST_NAO_ENCONTRADO,
-        message: 'Post não encontrado' 
+        message: 'Post não encontrado'
+      });
+    }
+
+    if (error instanceof PostOperacaoNaoPermitidaError) {
+      return res.status(403).json({
+        codigo: CodigoErro.POST_OPERACAO_NAO_PERMITIDA,
+        message: 'Operação não permitida para este usuário',
       });
     }
 
@@ -164,7 +171,7 @@ export class PostController {
           const testUuids = getTestUuids(req.testSessionId);
           for (const uuid of testUuids) {
             try {
-              await this.postService.delete(uuid);
+              await this.postService.deleteSemVerificacaoDePosse(uuid);
             } catch (error) {
               console.log(`Erro ao deletar post ${uuid}:`, error);
             }
@@ -276,18 +283,32 @@ export class PostController {
     }) as Promise<Response>;
   }
 
-  async update(req: Request, res: Response): Promise<Response> {
+  async update(req: IAuthRequest, res: Response): Promise<Response> {
     return createSpan('post.update', async () => {
       try {
+        if (!req.usuario) {
+          return res.status(401).json({
+            codigo: CodigoErro.AUTHZ_NAO_AUTENTICADO,
+            message: 'Usuário não autenticado',
+          });
+        }
+
         const { uuid } = req.params;
+
+        if (!uuid || !this.isValidUuid(uuid as string)) {
+          return res.status(400).json({
+            codigo: CodigoErro.VALIDACAO_CAMPO_INVALIDO,
+            message: 'ID inválido. Deve ser um UUID válido.'
+          });
+        }
 
         const body = { ...req.body };
         if (body.title && !body.titulo) body.titulo = body.title;
         if (body.content && !body.conteudo) body.conteudo = body.content;
 
         const validatedData = updatePostSchema.parse(body);
-        const post = await this.postService.update(uuid as string, validatedData);
-        
+        const post = await this.postService.update(uuid as string, validatedData, req.usuario);
+
         const postPublico = {
           uuid: post.uuid,
           title: post.title,
@@ -311,11 +332,26 @@ export class PostController {
     }) as Promise<Response>;
   }
 
-  async delete(req: Request, res: Response): Promise<Response> {
+  async delete(req: IAuthRequest, res: Response): Promise<Response> {
     return createSpan('post.delete', async () => {
       try {
+        if (!req.usuario) {
+          return res.status(401).json({
+            codigo: CodigoErro.AUTHZ_NAO_AUTENTICADO,
+            message: 'Usuário não autenticado',
+          });
+        }
+
         const { uuid } = req.params;
-        await this.postService.delete(uuid as string);
+
+        if (!uuid || !this.isValidUuid(uuid as string)) {
+          return res.status(400).json({
+            codigo: CodigoErro.VALIDACAO_CAMPO_INVALIDO,
+            message: 'ID inválido. Deve ser um UUID válido.'
+          });
+        }
+
+        await this.postService.delete(uuid as string, req.usuario);
         return res.status(204).send();
       } catch (error) {
         return this.handleError(error, res);

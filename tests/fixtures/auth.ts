@@ -15,9 +15,13 @@ export interface IAuthFixtureResult {
   };
 }
 
-export async function criarTokenDeTeste(papel: 'docente' | 'admin' | 'aluno' = 'docente'): Promise<IAuthFixtureResult> {
+export async function criarTokenDeTeste(
+  papel: 'docente' | 'admin' | 'aluno' = 'docente',
+  nome: string = 'Test User'
+): Promise<IAuthFixtureResult> {
   const timestamp = Date.now();
-  const email = `test-${timestamp}@test.com`;
+  const random = Math.random().toString(36).slice(2);
+  const email = `test-${timestamp}-${random}@test.com`;
   const senha = 'senha123';
   const senhaHash = await bcrypt.hash(senha, 10);
 
@@ -25,7 +29,7 @@ export async function criarTokenDeTeste(papel: 'docente' | 'admin' | 'aluno' = '
     data: {
       email,
       senha: senhaHash,
-      nome: 'Test User',
+      nome,
       papel
     }
   });

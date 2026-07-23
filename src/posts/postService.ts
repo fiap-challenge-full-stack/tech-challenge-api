@@ -9,6 +9,18 @@ export class PostNotFoundError extends Error {
   }
 }
 
+export class PostOperacaoNaoPermitidaError extends Error {
+  constructor() {
+    super('Operacao nao permitida para este usuario');
+    this.name = 'PostOperacaoNaoPermitidaError';
+  }
+}
+
+interface IAutorSessao {
+  nome: string;
+  papel: string;
+}
+
 export class PostService {
   constructor(private readonly postRepository: IPostRepository) {}
 
@@ -31,16 +43,36 @@ export class PostService {
     return this.postRepository.search(query);
   }
 
-  async update(uuid: string, data: UpdatePostInput): Promise<Post> {
+  // Somente o autor do post ou um admin podem editar/remover o post
+  // (evita IDOR: docentes não podem alterar posts de outros docentes).
+  private garantirPosse(post: Post, solicitante: IAutorSessao): void {
+    const podeAlterar = post.author === solicitante.nome || solicitante.papel === 'admin';
+    if (!podeAlterar) throw new PostOperacaoNaoPermitidaError();
+  }
+
+  async update(uuid: string, data: UpdatePostInput, solicitante: IAutorSessao): Promise<Post> {
     const post = await this.postRepository.findById(uuid);
     if (!post) throw new PostNotFoundError();
+
+    this.garantirPosse(post, solicitante);
 
     // A autoria de um post nunca é alterada via update — apenas título e conteúdo.
     post.update(data.titulo, data.conteudo);
     return this.postRepository.update(post);
   }
 
-  async delete(uuid: string): Promise<void> {
+  async delete(uuid: string, solicitante: IAutorSessao): Promise<void> {
+    const post = await this.postRepository.findById(uuid);
+    if (!post) throw new PostNotFoundError();
+
+    this.garantirPosse(post, solicitante);
+
+    await this.postRepository.delete(uuid);
+  }
+
+  // Usado exclusivamente pelas rotas de teste (`/posts/cleanup`), que já são
+  // desabilitadas em produção — não deve ser usado a partir de rotas autenticadas.
+  async deleteSemVerificacaoDePosse(uuid: string): Promise<void> {
     const post = await this.postRepository.findById(uuid);
     if (!post) throw new PostNotFoundError();
     await this.postRepository.delete(uuid);

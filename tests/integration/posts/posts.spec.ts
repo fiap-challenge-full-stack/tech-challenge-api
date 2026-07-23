@@ -113,4 +113,95 @@ describe('Posts API Integration Tests', () => {
       expect(response.status).toBe(404);
     });
   });
+
+  describe('Posse de post (IDOR)', () => {
+    let docenteAToken: string;
+    let docenteBToken: string;
+    let adminToken: string;
+    let postDoDocenteA: string;
+
+    beforeAll(async () => {
+      const docenteA = await criarTokenDeTeste('docente', 'Docente A');
+      const docenteB = await criarTokenDeTeste('docente', 'Docente B');
+      const admin = await criarTokenDeTeste('admin', 'Admin Geral');
+
+      docenteAToken = docenteA.token;
+      docenteBToken = docenteB.token;
+      adminToken = admin.token;
+
+      const criado = await request(app)
+        .post('/posts')
+        .set('Cookie', `token=${docenteAToken}`)
+        .send({
+          title: 'Post do Docente A',
+          content: 'Conteúdo original do post do docente A para o teste de posse.',
+        });
+
+      postDoDocenteA = criado.body.dados.uuid;
+    });
+
+    it('docente B não pode editar post do docente A (403)', async () => {
+      const response = await request(app)
+        .patch(`/posts/${postDoDocenteA}`)
+        .set('Cookie', `token=${docenteBToken}`)
+        .send({ title: 'Título Alterado Indevidamente' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('docente B não pode deletar post do docente A (403)', async () => {
+      const response = await request(app)
+        .delete(`/posts/${postDoDocenteA}`)
+        .set('Cookie', `token=${docenteBToken}`);
+
+      expect(response.status).toBe(403);
+    });
+
+    it('o próprio autor (docente A) pode editar seu post', async () => {
+      const response = await request(app)
+        .patch(`/posts/${postDoDocenteA}`)
+        .set('Cookie', `token=${docenteAToken}`)
+        .send({ title: 'Título Alterado Pelo Próprio Autor' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.dados.title).toBe('Título Alterado Pelo Próprio Autor');
+    });
+
+    it('admin pode editar post de outro autor', async () => {
+      const response = await request(app)
+        .patch(`/posts/${postDoDocenteA}`)
+        .set('Cookie', `token=${adminToken}`)
+        .send({ title: 'Título Alterado Pelo Admin' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.dados.title).toBe('Título Alterado Pelo Admin');
+    });
+
+    it('admin pode deletar post de outro autor', async () => {
+      const response = await request(app)
+        .delete(`/posts/${postDoDocenteA}`)
+        .set('Cookie', `token=${adminToken}`);
+
+      expect(response.status).toBe(204);
+    });
+  });
+
+  describe('Validação de UUID em update/delete', () => {
+    it('deve retornar 400 ao tentar atualizar post com uuid inválido', async () => {
+      const response = await request(app)
+        .patch('/posts/uuid-invalido')
+        .set('Cookie', `token=${authToken}`)
+        .send({ title: 'Qualquer Título Válido' });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('deve retornar 400 ao tentar deletar post com uuid inválido', async () => {
+      const response = await request(app)
+        .delete('/posts/uuid-invalido')
+        .set('Cookie', `token=${authToken}`);
+
+      expect(response.status).toBe(400);
+    });
+  });
 });

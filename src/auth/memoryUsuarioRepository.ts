@@ -86,6 +86,16 @@ export class MemoryUsuarioRepository implements IUsuarioRepository {
     return Array.from(this.usuarios.values()).filter((usuario) => usuario.papel === papel).length;
   }
 
+  async countByPapelParaAtualizacao(papel: string): Promise<number> {
+    // Repositório em memória é single-threaded/sem transações reais;
+    // reaproveita a contagem simples.
+    return this.countByPapel(papel);
+  }
+
+  async executarEmTransacao<T>(fn: (repo: IUsuarioRepository) => Promise<T>): Promise<T> {
+    return fn(this);
+  }
+
   clear(): void {
     this.usuarios.clear();
   }

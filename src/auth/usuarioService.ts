@@ -90,19 +90,6 @@ export class UsuarioService {
       dadosPermitidos.papel = data.papel;
     }
 
-    // Impede rebaixar o último admin do sistema.
-    if (
-      ehAdmin &&
-      dadosPermitidos.papel !== undefined &&
-      dadosPermitidos.papel !== 'admin' &&
-      usuarioAlvo.papel === 'admin'
-    ) {
-      const totalAdmins = await this.usuarioRepository.countByPapel('admin');
-      if (totalAdmins <= 1) {
-        throw new UsuarioUltimoAdminError();
-      }
-    }
-
     if (data.senha !== undefined) {
       dadosPermitidos.senha = await bcrypt.hash(data.senha, 10);
     }
@@ -114,7 +101,26 @@ export class UsuarioService {
       }
     }
 
-    return this.usuarioRepository.update(uuid, dadosPermitidos);
+    const vaiRebaixarAdmin =
+      ehAdmin &&
+      dadosPermitidos.papel !== undefined &&
+      dadosPermitidos.papel !== 'admin' &&
+      usuarioAlvo.papel === 'admin';
+
+    // A checagem de "último admin" e a escrita ocorrem na mesma transação
+    // (com bloqueio de linha via `countByPapelParaAtualizacao`) para evitar
+    // que duas requisições concorrentes rebaixem, cada uma, um dos dois
+    // últimos admins e deixem o sistema sem nenhum administrador.
+    return this.usuarioRepository.executarEmTransacao(async (repo) => {
+      if (vaiRebaixarAdmin) {
+        const totalAdmins = await repo.countByPapelParaAtualizacao('admin');
+        if (totalAdmins <= 1) {
+          throw new UsuarioUltimoAdminError();
+        }
+      }
+
+      return repo.update(uuid, dadosPermitidos);
+    });
   }
 
   async deletar(uuid: string, requisitante: IRequisitante): Promise<void> {
@@ -128,13 +134,16 @@ export class UsuarioService {
       throw new UsuarioOperacaoNaoPermitidaError('Você só pode remover sua própria conta');
     }
 
-    if (usuarioAlvo.papel === 'admin') {
-      const totalAdmins = await this.usuarioRepository.countByPapel('admin');
-      if (totalAdmins <= 1) {
-        throw new UsuarioUltimoAdminError();
+    // Mesma proteção de transação/lock aplicada em `atualizar`.
+    await this.usuarioRepository.executarEmTransacao(async (repo) => {
+      if (usuarioAlvo.papel === 'admin') {
+        const totalAdmins = await repo.countByPapelParaAtualizacao('admin');
+        if (totalAdmins <= 1) {
+          throw new UsuarioUltimoAdminError();
+        }
       }
-    }
 
-    await this.usuarioRepository.delete(uuid);
+      await repo.delete(uuid);
+    });
   }
 }
