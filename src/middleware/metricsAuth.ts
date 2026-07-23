@@ -18,12 +18,19 @@ export function metricsAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: 'Autenticação necessária' });
   }
 
+  const expectedUser = process.env.METRICS_USER;
+  const expectedPass = process.env.METRICS_PASS;
+
+  // Nunca usar credenciais padrão hardcoded: se as variáveis de ambiente não
+  // estiverem configuradas, o acesso deve ser negado (fail closed).
+  if (!expectedUser || !expectedPass) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Metrics"');
+    return res.status(401).json({ message: 'Métricas não configuradas: credenciais ausentes' });
+  }
+
   try {
     const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('ascii');
     const [username, password] = credentials.split(':');
-
-    const expectedUser = process.env.METRICS_USER || 'admin';
-    const expectedPass = process.env.METRICS_PASS || 'admin';
 
     if (username === expectedUser && password === expectedPass) {
       return next();
