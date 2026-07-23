@@ -22,6 +22,7 @@ export enum CodigoErro {
   POST_CONTEUDO_INVALIDO = 'POST_003',
   POST_AUTOR_INVALIDO = 'POST_004',
   POST_CAMPOS_OBRIGATORIOS = 'POST_005',
+  POST_OPERACAO_NAO_PERMITIDA = 'POST_006',
 
   // Erros de Comentários
   COMENTARIO_NAO_ENCONTRADO = 'COM_001',
@@ -79,6 +80,7 @@ export const mensagensErro: Record<CodigoErro, string> = {
   [CodigoErro.POST_CONTEUDO_INVALIDO]: 'Conteúdo inválido',
   [CodigoErro.POST_AUTOR_INVALIDO]: 'Autor inválido',
   [CodigoErro.POST_CAMPOS_OBRIGATORIOS]: 'Campos obrigatórios não fornecidos',
+  [CodigoErro.POST_OPERACAO_NAO_PERMITIDA]: 'Operação não permitida para este usuário',
   [CodigoErro.COMENTARIO_NAO_ENCONTRADO]: 'Comentário não encontrado',
   [CodigoErro.COMENTARIO_OPERACAO_NAO_PERMITIDA]: 'Operação não permitida para este usuário',
   [CodigoErro.VALIDACAO_CAMPO_INVALIDO]: 'Campo inválido',
