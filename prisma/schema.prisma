@@ -38,14 +38,16 @@ model Post {
 }
 
 model Comentario {
-  id        Int      @id @default(autoincrement())
-  uuid      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  postUuid  String   @db.Uuid
-  autorUuid String   @db.Uuid
+  id        Int       @id @default(autoincrement())
+  uuid      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postUuid  String    @db.Uuid
+  autorUuid String    @db.Uuid
   autorNome String
   conteudo  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  apagado   Boolean   @default(false)
+  apagadoEm DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([postUuid])
   @@map("comentarios")
