@@ -60,12 +60,58 @@ describe('Comentarios API Integration Tests', () => {
       expect(Array.isArray(data)).toBe(true);
     });
 
-    it('deve permitir que o autor remova seu próprio comentário', async () => {
+    it('deve permitir que o autor edite seu próprio comentário', async () => {
+      const response = await request(app)
+        .patch(`/comentarios/${createdCommentUuid}`)
+        .set('Cookie', `token=${alunoToken}`)
+        .send({ conteudo: 'Muito bom esse post! (editado)' });
+
+      expect(response.status).toBe(200);
+      const body = response.body.dados || response.body;
+      expect(body.conteudo).toBe('Muito bom esse post! (editado)');
+      expect(body.editado).toBe(true);
+    });
+
+    it('não deve permitir que outro usuário edite um comentário alheio', async () => {
+      const response = await request(app)
+        .patch(`/comentarios/${createdCommentUuid}`)
+        .set('Cookie', `token=${autorToken}`)
+        .send({ conteudo: 'Tentativa de edição indevida.' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('não deve permitir que outro usuário exclua um comentário alheio', async () => {
+      const response = await request(app)
+        .delete(`/comentarios/${createdCommentUuid}`)
+        .set('Cookie', `token=${autorToken}`);
+
+      expect(response.status).toBe(403);
+    });
+
+    it('deve permitir que o autor remova (logicamente) seu próprio comentário', async () => {
       const response = await request(app)
         .delete(`/comentarios/${createdCommentUuid}`)
         .set('Cookie', `token=${alunoToken}`);
 
       expect(response.status).toBe(204);
+
+      const listResponse = await request(app).get(`/posts/${postUuid}/comentarios`);
+      const comentarios = listResponse.body.dados || listResponse.body;
+      const comentarioApagado = comentarios.find((c: { uuid: string }) => c.uuid === createdCommentUuid);
+
+      expect(comentarioApagado).toBeDefined();
+      expect(comentarioApagado.apagado).toBe(true);
+      expect(comentarioApagado.conteudo).toBe('');
+    });
+
+    it('não deve permitir editar um comentário já apagado', async () => {
+      const response = await request(app)
+        .patch(`/comentarios/${createdCommentUuid}`)
+        .set('Cookie', `token=${alunoToken}`)
+        .send({ conteudo: 'Tentando reviver o comentário.' });
+
+      expect(response.status).toBe(404);
     });
   });
 
