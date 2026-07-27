@@ -10,6 +10,9 @@ import { PostController } from '../posts/postController';
 import { NativeSqlComentarioRepository } from '../comentarios/nativeSqlComentarioRepository';
 import { ComentarioService } from '../comentarios/comentarioService';
 import { ComentarioController } from '../comentarios/comentarioController';
+import { PrismaSeguidorRepository } from '../seguidores/prismaSeguidorRepository';
+import { SeguidorService } from '../seguidores/seguidorService';
+import { SeguidorController } from '../seguidores/seguidorController';
 
 const prisma = new PrismaClient();
 
@@ -27,6 +30,10 @@ const postController = new PostController(postService);
 const comentarioRepository = new NativeSqlComentarioRepository();
 const comentarioService = new ComentarioService(comentarioRepository, postRepository);
 const comentarioController = new ComentarioController(comentarioService);
+
+const seguidorRepository = new PrismaSeguidorRepository(prisma);
+const seguidorService = new SeguidorService(seguidorRepository, usuarioRepository);
+const seguidorController = new SeguidorController(seguidorService);
 
 export const container = {
   prisma,
@@ -49,5 +56,10 @@ export const container = {
     repository: comentarioRepository,
     service: comentarioService,
     controller: comentarioController,
+  },
+  seguidores: {
+    repository: seguidorRepository,
+    service: seguidorService,
+    controller: seguidorController,
   },
 };

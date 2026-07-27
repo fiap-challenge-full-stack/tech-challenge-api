@@ -16,9 +16,11 @@ model Usuario {
   email     String   @unique
   senha     String
   nome      String
-  papel     String   @default("docente")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  papel      String     @default("docente")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  seguindo   Seguidor[] @relation("Seguindo")
+  seguidores Seguidor[] @relation("Seguidores")
 
   @@index([papel])
   @@map("usuarios")
@@ -52,4 +54,20 @@ model Comentario {
   @@index([postUuid])
   @@index([postUuid, createdAt(sort: Desc), id(sort: Desc)])
   @@map("comentarios")
+}
+
+model Seguidor {
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seguidorUuid String   @db.Uuid
+  seguidoUuid  String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  seguidor Usuario @relation("Seguindo", fields: [seguidorUuid], references: [uuid], onDelete: Cascade)
+  seguido  Usuario @relation("Seguidores", fields: [seguidoUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([seguidorUuid, seguidoUuid])
+  @@index([seguidorUuid])
+  @@index([seguidoUuid])
+  @@map("seguidores")
 }
