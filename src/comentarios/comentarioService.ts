@@ -1,6 +1,6 @@
 import { Comentario } from './comentario';
-import { IComentarioRepository } from './comentarioRepository';
-import { CreateComentarioInput, UpdateComentarioInput } from './comentarioSchemas';
+import { IComentarioRepository, IComentariosPaginados } from './comentarioRepository';
+import { CreateComentarioInput, ListComentariosQuery, UpdateComentarioInput } from './comentarioSchemas';
 import { IPostRepository } from '../posts/postRepository';
 
 export class ComentarioNotFoundError extends Error {
@@ -44,11 +44,12 @@ export class ComentarioService {
     return this.comentarioRepository.create(comentario);
   }
 
-  async listByPost(postUuid: string): Promise<Comentario[]> {
+  async listByPost(postUuid: string, query: ListComentariosQuery): Promise<IComentariosPaginados & ListComentariosQuery> {
     const post = await this.postRepository.findById(postUuid);
     if (!post) throw new PostDoComentarioNotFoundError();
 
-    return this.comentarioRepository.findByPostUuid(postUuid);
+    const { comentarios, total } = await this.comentarioRepository.findByPostUuid(postUuid, query);
+    return { comentarios, total, page: query.page, pageSize: query.pageSize };
   }
 
   async update(uuid: string, data: UpdateComentarioInput, solicitante: IAutorSessao): Promise<Comentario> {

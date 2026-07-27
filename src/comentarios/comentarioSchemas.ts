@@ -13,3 +13,12 @@ export const updateComentarioSchema = z.object({
 });
 
 export type UpdateComentarioInput = z.infer<typeof updateComentarioSchema>;
+
+// Paginação da listagem de comentários (mesmo padrão de `/usuarios`):
+// a API devolve os mais recentes primeiro, e o cliente carrega páginas seguintes sob demanda.
+export const listComentariosQuerySchema = z.object({
+  page: z.coerce.number().int('page deve ser um número inteiro').min(1).default(1),
+  pageSize: z.coerce.number().int('pageSize deve ser um número inteiro').min(1).max(50).default(10),
+});
+
+export type ListComentariosQuery = z.infer<typeof listComentariosQuerySchema>;

@@ -50,5 +50,6 @@ model Comentario {
   updatedAt DateTime  @updatedAt
 
   @@index([postUuid])
+  @@index([postUuid, createdAt(sort: Desc), id(sort: Desc)])
   @@map("comentarios")
 }

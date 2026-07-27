@@ -60,6 +60,20 @@ describe('Comentarios API Integration Tests', () => {
       expect(Array.isArray(data)).toBe(true);
     });
 
+    it('deve paginar a listagem devolvendo os metadados de paginação', async () => {
+      const response = await request(app).get(`/posts/${postUuid}/comentarios?page=1&pageSize=1`);
+      expect(response.status).toBe(200);
+      expect(response.body.dados.length).toBeLessThanOrEqual(1);
+      expect(response.body.paginacao).toEqual(
+        expect.objectContaining({ page: 1, pageSize: 1, total: expect.any(Number), totalPaginas: expect.any(Number) }),
+      );
+    });
+
+    it('deve rejeitar pageSize inválido na listagem', async () => {
+      const response = await request(app).get(`/posts/${postUuid}/comentarios?pageSize=0`);
+      expect(response.status).toBe(400);
+    });
+
     it('deve permitir que o autor edite seu próprio comentário', async () => {
       const response = await request(app)
         .patch(`/comentarios/${createdCommentUuid}`)

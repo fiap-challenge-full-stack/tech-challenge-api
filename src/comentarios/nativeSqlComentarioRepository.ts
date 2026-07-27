@@ -1,6 +1,6 @@
 import { db } from '../lib/db';
 import { Comentario } from './comentario';
-import { IComentarioRepository } from './comentarioRepository';
+import { IComentarioPaginacao, IComentarioRepository, IComentariosPaginados } from './comentarioRepository';
 import { ComentarioMapper, IComentarioPersistence } from './comentarioMapper';
 
 export class NativeSqlComentarioRepository implements IComentarioRepository {
@@ -23,10 +23,21 @@ export class NativeSqlComentarioRepository implements IComentarioRepository {
     return ComentarioMapper.toDomain(rows[0] as IComentarioPersistence);
   }
 
-  async findByPostUuid(postUuid: string): Promise<Comentario[]> {
-    const query = 'SELECT * FROM "comentarios" WHERE "postUuid" = $1 ORDER BY "createdAt" ASC;';
-    const { rows } = await db.query(query, [postUuid]);
-    return rows.map((row: IComentarioPersistence) => ComentarioMapper.toDomain(row));
+  async findByPostUuid(postUuid: string, { page, pageSize }: IComentarioPaginacao): Promise<IComentariosPaginados> {
+    // Mais recentes primeiro: a primeira página é sempre o topo da conversa.
+    const query = `
+      SELECT *, COUNT(*) OVER() AS "totalRegistros"
+      FROM "comentarios"
+      WHERE "postUuid" = $1
+      ORDER BY "createdAt" DESC, id DESC
+      LIMIT $2 OFFSET $3;
+    `;
+    const { rows } = await db.query(query, [postUuid, pageSize, (page - 1) * pageSize]);
+    const total = rows.length > 0 ? Number((rows[0] as { totalRegistros: string }).totalRegistros) : 0;
+    return {
+      comentarios: rows.map((row: IComentarioPersistence) => ComentarioMapper.toDomain(row)),
+      total,
+    };
   }
 
   async update(uuid: string, conteudo: string): Promise<Comentario> {

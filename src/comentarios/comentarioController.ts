@@ -5,7 +5,7 @@ import {
   PostDoComentarioNotFoundError,
   ComentarioOperacaoNaoPermitidaError,
 } from './comentarioService';
-import { createComentarioSchema, updateComentarioSchema } from './comentarioSchemas';
+import { createComentarioSchema, listComentariosQuerySchema, updateComentarioSchema } from './comentarioSchemas';
 import { ZodError } from 'zod';
 import { CodigoErro, criarErro } from '../shared/erros';
 import { logError } from '../shared/logger';
@@ -124,11 +124,18 @@ export class ComentarioController {
         });
       }
 
-      const comentarios = await this.comentarioService.listByPost(postUuid);
+      const query = listComentariosQuerySchema.parse(req.query);
+      const resultado = await this.comentarioService.listByPost(postUuid, query);
 
       return res.status(200).json({
         sucesso: true,
-        dados: comentarios.map(comentarioPublico),
+        dados: resultado.comentarios.map(comentarioPublico),
+        paginacao: {
+          page: resultado.page,
+          pageSize: resultado.pageSize,
+          total: resultado.total,
+          totalPaginas: Math.ceil(resultado.total / resultado.pageSize),
+        },
       });
     } catch (error) {
       return this.handleError(error, res);
