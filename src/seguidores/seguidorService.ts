@@ -1,6 +1,7 @@
 import { ISeguidorRepository } from './seguidorRepository';
 import { IUsuarioRepository } from '../auth/usuarioRepository';
 import { Seguidor } from './seguidor';
+import { Usuario } from '../auth/usuario';
 
 export class SeguidorService {
   constructor(
@@ -39,7 +40,7 @@ export class SeguidorService {
     return this.seguidorRepository.deixarDeSeguir(seguidorUuid, seguidoUuid);
   }
 
-  async listarSeguindo(seguidorUuid: string): Promise<string[]> {
+  async listarSeguindo(seguidorUuid: string): Promise<Usuario[]> {
     return this.seguidorRepository.listarSeguindo(seguidorUuid);
   }
 }

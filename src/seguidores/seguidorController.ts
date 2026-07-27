@@ -61,7 +61,7 @@ export class SeguidorController {
       }
 
       const seguindo = await this.seguidorService.listarSeguindo(seguidorUuid);
-      return res.status(200).json(seguindo);
+      return res.status(200).json(seguindo.map((usuario) => usuario.toJSON()));
     } catch (error: unknown) {
       if (error instanceof Error) {
         return res.status(500).json({ message: 'Erro interno do servidor', detail: error.message });

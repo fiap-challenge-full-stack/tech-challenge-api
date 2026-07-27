@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ISeguidorRepository } from './seguidorRepository';
 import { Seguidor } from './seguidor';
+import { Usuario } from '../auth/usuario';
 
 export class PrismaSeguidorRepository implements ISeguidorRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -39,18 +40,20 @@ export class PrismaSeguidorRepository implements ISeguidorRepository {
     return new Seguidor(data.uuid, data.seguidorUuid, data.seguidoUuid, data.createdAt);
   }
 
-  async listarSeguindo(seguidorUuid: string): Promise<string[]> {
+  async listarSeguindo(seguidorUuid: string): Promise<Usuario[]> {
     const data = await this.prisma.seguidor.findMany({
       where: { seguidorUuid },
-      select: { seguidoUuid: true },
+      include: { seguido: true },
+      take: 200,
     });
-    return data.map((s: { seguidoUuid: string }) => s.seguidoUuid);
+    return data.map((s) => new Usuario(s.seguido));
   }
 
   async listarSeguidores(seguidoUuid: string): Promise<string[]> {
     const data = await this.prisma.seguidor.findMany({
       where: { seguidoUuid },
       select: { seguidorUuid: true },
+      take: 200,
     });
     return data.map((s: { seguidorUuid: string }) => s.seguidorUuid);
   }
